@@ -1,0 +1,511 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: keycloakclients.keycloak.japannext.co.jp
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  labels:
+  {{- include "keycloak-operator.labels" . | nindent 4 }}
+spec:
+  group: keycloak.japannext.co.jp
+  names:
+    categories:
+    - keycloak
+    kind: KeycloakClient
+    listKind: KeycloakClientList
+    plural: keycloakclients
+    shortNames:
+    - kc
+    singular: keycloakclient
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Client ID of the keycloak client
+      jsonPath: .spec.config.clientId
+      name: CLIENT ID
+      type: string
+    - description: Authentication protocol used by the client
+      jsonPath: .spec.config.protocol
+      name: PROTOCOL
+      type: string
+    - description: The status of the realm
+      jsonPath: .status.resource.phase
+      name: STATUS
+      type: string
+    - description: The last time the resource was changed
+      jsonPath: .status.resource.lastChanged
+      name: LAST CHANGED
+      priority: 1
+      type: date
+    - description: Base URL of the service
+      jsonPath: .spec.config.baseUrl
+      name: BASE URL
+      priority: 1
+      type: string
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: KeycloakClient is the Schema for the keycloakclients API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              config:
+                description: Client is a ClientRepresentation
+                properties:
+                  access:
+                    additionalProperties:
+                      type: boolean
+                    description: Access options.
+                    type: object
+                  adminUrl:
+                    default: ""
+                    description: Application Admin URL.
+                    type: string
+                  attributes:
+                    additionalProperties:
+                      type: string
+                    description: Client Attributes.
+                    type: object
+                  authenticationFlowBindingOverrides:
+                    additionalProperties:
+                      type: string
+                    description: Authentication Flow Binding Overrides.
+                    type: object
+                  authorizationServicesEnabled:
+                    description: True if fine-grained authorization support is enabled
+                      for this client.
+                    type: boolean
+                  authorizationSettings:
+                    description: Authorization settings for this resource server.
+                    properties:
+                      allowRemoteResourceManagement:
+                        type: boolean
+                      clientId:
+                        type: string
+                      decisionStrategy:
+                        enum:
+                        - AFFIRMATIVE
+                        - UNANIMOUS
+                        - CONSENSUS
+                        type: string
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      policies:
+                        items:
+                          description: PolicyRepresentation is a representation of a
+                            Policy
+                          properties:
+                            config:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            decisionStrategy:
+                              enum:
+                              - AFFIRMATIVE
+                              - UNANIMOUS
+                              - CONSENSUS
+                              type: string
+                            description:
+                              type: string
+                            id:
+                              type: string
+                            logic:
+                              enum:
+                              - POSITIVE
+                              - NEGATIVE
+                              type: string
+                            name:
+                              type: string
+                            owner:
+                              type: string
+                            policies:
+                              items:
+                                type: string
+                              type: array
+                            resources:
+                              items:
+                                type: string
+                              type: array
+                            scopes:
+                              items:
+                                type: string
+                              type: array
+                            type:
+                              type: string
+                          type: object
+                        type: array
+                      policyEnforcementMode:
+                        enum:
+                        - ENFORCING
+                        - PERMISSIVE
+                        - DISABLED
+                        type: string
+                      resources:
+                        items:
+                          description: ResourceRepresentation is a representation of
+                            a Resource
+                          properties:
+                            _id:
+                              type: string
+                            attributes:
+                              additionalProperties:
+                                items:
+                                  type: string
+                                type: array
+                              type: object
+                            displayName:
+                              type: string
+                            icon_uri:
+                              type: string
+                            name:
+                              type: string
+                            owner:
+                              description: ResourceOwnerRepresentation represents a
+                                resource's owner
+                              properties:
+                                id:
+                                  type: string
+                                name:
+                                  type: string
+                              type: object
+                            ownerManagedAccess:
+                              type: boolean
+                            resource_scopes:
+                              items:
+                                description: ScopeRepresentation is a represents a Scope
+                                properties:
+                                  displayName:
+                                    type: string
+                                  iconUri:
+                                    type: string
+                                  id:
+                                    type: string
+                                  name:
+                                    type: string
+                                  policies:
+                                    items:
+                                      description: PolicyRepresentation is a representation
+                                        of a Policy
+                                      properties:
+                                        config:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                        decisionStrategy:
+                                          enum:
+                                          - AFFIRMATIVE
+                                          - UNANIMOUS
+                                          - CONSENSUS
+                                          type: string
+                                        description:
+                                          type: string
+                                        id:
+                                          type: string
+                                        logic:
+                                          enum:
+                                          - POSITIVE
+                                          - NEGATIVE
+                                          type: string
+                                        name:
+                                          type: string
+                                        owner:
+                                          type: string
+                                        policies:
+                                          items:
+                                            type: string
+                                          type: array
+                                        resources:
+                                          items:
+                                            type: string
+                                          type: array
+                                        scopes:
+                                          items:
+                                            type: string
+                                          type: array
+                                        type:
+                                          type: string
+                                      type: object
+                                    type: array
+                                type: object
+                              type: array
+                            type:
+                              type: string
+                            uris:
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        type: array
+                      scopes:
+                        items:
+                          description: ScopeRepresentation is a represents a Scope
+                          properties:
+                            displayName:
+                              type: string
+                            iconUri:
+                              type: string
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            policies:
+                              items:
+                                description: PolicyRepresentation is a representation
+                                  of a Policy
+                                properties:
+                                  config:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                  decisionStrategy:
+                                    enum:
+                                    - AFFIRMATIVE
+                                    - UNANIMOUS
+                                    - CONSENSUS
+                                    type: string
+                                  description:
+                                    type: string
+                                  id:
+                                    type: string
+                                  logic:
+                                    enum:
+                                    - POSITIVE
+                                    - NEGATIVE
+                                    type: string
+                                  name:
+                                    type: string
+                                  owner:
+                                    type: string
+                                  policies:
+                                    items:
+                                      type: string
+                                    type: array
+                                  resources:
+                                    items:
+                                      type: string
+                                    type: array
+                                  scopes:
+                                    items:
+                                      type: string
+                                    type: array
+                                  type:
+                                    type: string
+                                type: object
+                              type: array
+                          type: object
+                        type: array
+                    type: object
+                  baseUrl:
+                    description: // +kubebuilder:default=""
+                    type: string
+                  bearerOnly:
+                    default: false
+                    type: boolean
+                  clientAuthenticatorType:
+                    default: client-secret
+                    type: string
+                  clientId:
+                    type: string
+                  consentRequired:
+                    default: false
+                    type: boolean
+                  defaultClientScopes:
+                    items:
+                      type: string
+                    type: array
+                  description:
+                    default: ""
+                    type: string
+                  directAccessGrantsEnabled:
+                    default: false
+                    type: boolean
+                  enabled:
+                    default: true
+                    type: boolean
+                  frontchannelLogout:
+                    default: false
+                    type: boolean
+                  fullScopeAllowed:
+                    default: true
+                    type: boolean
+                  id:
+                    type: string
+                  implicitFlowEnabled:
+                    default: false
+                    type: boolean
+                  name:
+                    type: string
+                  nodeReRegistrationTimeout:
+                    default: -1
+                    format: int32
+                    type: integer
+                  notBefore:
+                    default: 0
+                    format: int32
+                    type: integer
+                  optionalClientScopes:
+                    default:
+                    - address
+                    - phone
+                    - offline_access
+                    - microprofile-jwt
+                    items:
+                      type: string
+                    type: array
+                  origin:
+                    type: string
+                  protocol:
+                    default: openid-connect
+                    type: string
+                  protocolMappers:
+                    items:
+                      description: ProtocolMapper representation
+                      properties:
+                        config:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        consentRequired:
+                          default: false
+                          type: boolean
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        protocol:
+                          type: string
+                        protocolMapper:
+                          enum:
+                          - oidc-acr-mapper
+                          - oidc-address-mapper
+                          - oidc-allowed-origins-mapper
+                          - oidc-audience-mapper
+                          - oidc-audience-resolve-mapper
+                          - oidc-claims-param-token-mapper
+                          - oidc-full-name-mapper
+                          - oidc-group-membership-mapper
+                          - oidc-hardcoded-claim-mapper
+                          - oidc-hardcoded-role-mapper
+                          - oidc-role-name-mapper
+                          - oidc-sha256-pairwise-sub-mapper
+                          - oidc-usermodel-attribute-mapper
+                          - oidc-usermodel-client-role-mapper
+                          - oidc-usermodel-property-mapper
+                          - oidc-usermodel-realm-role-mapper
+                          - oidc-usersessionmodel-note-mapper
+                          type: string
+                      type: object
+                    type: array
+                  publicClient:
+                    default: false
+                    type: boolean
+                  redirectUris:
+                    items:
+                      type: string
+                    type: array
+                  registeredNodes:
+                    additionalProperties:
+                      type: integer
+                    type: object
+                  registrationAccessToken:
+                    type: string
+                  rootUrl:
+                    default: ""
+                    type: string
+                  secret:
+                    type: string
+                  serviceAccountsEnabled:
+                    default: false
+                    type: boolean
+                  standardFlowEnabled:
+                    default: true
+                    type: boolean
+                  surrogateAuthRequired:
+                    default: false
+                    type: boolean
+                  webOrigins:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              endpoint:
+                description: Select a KeycloakEndpoint
+                properties:
+                  kind:
+                    default: KeycloakEndpoint
+                    description: Kind of the resource representing a Keycloak endpoint
+                    enum:
+                    - KeycloakEndpoint
+                    - KeycloakClusterEndpoint
+                    type: string
+                  name:
+                    description: Name of the KeycloakEndpoint/KeycloakClusterEndpoint
+                      resource
+                    type: string
+                type: object
+              realm:
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
+              secret:
+                properties:
+                  enabled:
+                    default: true
+                    description: Enable secret generation. Only useful when using the
+                      `client-secret` client auth method.
+                    type: boolean
+                  name:
+                    description: Name of the secret to generate
+                    type: string
+                required:
+                - enabled
+                - name
+                type: object
+            required:
+            - config
+            - realm
+            type: object
+          status:
+            properties:
+              clientID:
+                description: The ID of the OIDC/SAML client that is created / managed
+                type: string
+              resource:
+                description: The status of the keycloak resource
+                properties:
+                  lastChanged:
+                    description: The time the resource was last updated.
+                    format: date-time
+                    type: string
+                  phase:
+                    description: Whether the resource is synced, not synced, failed
+                      to sync, etc
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

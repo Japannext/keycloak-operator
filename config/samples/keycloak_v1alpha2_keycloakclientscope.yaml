@@ -1,0 +1,12 @@
+apiVersion: keycloak.japannext.co.jp/v1alpha2
+kind: KeycloakClientScope
+metadata:
+  labels:
+    app.kubernetes.io/name: keycloakclientscope
+    app.kubernetes.io/instance: keycloakclientscope-sample
+    app.kubernetes.io/part-of: keycloak-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: keycloak-operator
+  name: keycloakclientscope-sample
+spec:
+  # TODO(user): Add fields here

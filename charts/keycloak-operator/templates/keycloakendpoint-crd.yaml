@@ -1,0 +1,196 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: keycloakendpoints.keycloak.japannext.co.jp
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ include "keycloak-operator.fullname"
+      . }}-serving-cert'
+    controller-gen.kubebuilder.io/version: v0.13.0
+  labels:
+  {{- include "keycloak-operator.labels" . | nindent 4 }}
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: '{{ include "keycloak-operator.fullname" . }}-webhook-service'
+          namespace: '{{ .Release.Namespace }}'
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: keycloak.japannext.co.jp
+  names:
+    kind: KeycloakEndpoint
+    listKind: KeycloakEndpointList
+    plural: keycloakendpoints
+    singular: keycloakendpoint
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: The version of the endpoint
+      jsonPath: .status.version
+      name: VERSION
+      type: string
+    - description: The status of the endpoint
+      jsonPath: .status.phase
+      name: STATUS
+      type: string
+    - description: The last time the endpoint was connected
+      jsonPath: .status.lastSuccess
+      name: LAST CONNECTION
+      priority: 1
+      type: date
+    - description: The URL of the endpoint
+      jsonPath: .spec.baseUrl
+      name: URL
+      priority: 1
+      type: string
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: KeycloakEndpoint is the Schema for the keycloakendpoints API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KeycloakEndpointSpec defines the desired state of KeycloakEndpoint
+            properties:
+              basePath:
+                default: ""
+                description: Additional prefix of the keycloak API (if needed). Should
+                  sometimes be set to `/auth` for some deployments of keycloak.
+                type: string
+              baseUrl:
+                description: URL to the keycloak server to manage
+                type: string
+              basicAuthSecret:
+                description: The name of a secret of type `kubernetes.io/basic-auth`
+                  to authenticate to keycloak as admin. The secret need to be in the
+                  same namespace as the KeycloakEndpoint. When used in the context of
+                  KeycloakClusterEndpoint, a the `namespace` of the secret can be set.
+                properties:
+                  name:
+                    description: The name of a secret of type `kubernetes.io/basic-auth`
+                      to authenticate to keycloak as admin. The secret need to be in
+                      the same namespace as the KeycloakEndpoint.
+                    type: string
+                  namespace:
+                    description: Namespace where the secret resides. Only used for KeycloakClusterEndpoint.
+                      Has no effect when used with KeycloakEndpoint.
+                    type: string
+                required:
+                - name
+                type: object
+              caConfigMap:
+                description: Use the value stored in a ConfigMap for the CA certificate
+                properties:
+                  key:
+                    description: Name of the configMap key to use
+                    type: string
+                  name:
+                    description: Name of the configMap referenced
+                    type: string
+                  namespace:
+                    description: Namespace where the ConfigMap resides. Used only for
+                      KeycloakClusterEndpoint. Has no effect when used with KeycloakEndpoint.
+                    type: string
+                required:
+                - key
+                - name
+                type: object
+              realm:
+                default: master
+                description: Realm to use for admin connections. Defaults to `master`.
+                type: string
+              rules:
+                description: 'A list of rules to complete kubernetes RBAC. If the resource
+                  being reconciled matches one of this rule, the action will be executed
+                  (allow/reject). If no rule match, the `noMatchBehavior` will be executed.
+                  If nothing matches, it will be allowed. If you need to default to
+                  forbidden, add a `{action: reject}` as the last rule.'
+                items:
+                  description: A constraint. Can be match a resource being reconciled.
+                  properties:
+                    action:
+                      description: 'The authorization action to perform. Valid values:
+                        `allow`/`reject`.'
+                      enum:
+                      - allow
+                      - reject
+                      type: string
+                    name:
+                      description: A name to describe and document the rule.
+                      type: string
+                    namespaces:
+                      description: Namespaces allowed to manage resources `*` and an
+                        empty array will authorize the rule for any namespace
+                      items:
+                        type: string
+                      type: array
+                    realms:
+                      description: Realms concerned by the constraint `*` and an empty
+                        array will authorize the rule for any realm
+                      items:
+                        type: string
+                      type: array
+                    resources:
+                      description: Resources that are allowed to be modified. `*` and
+                        an empty array will authorize the rule for every resource
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - action
+                  type: object
+                type: array
+              timeout:
+                default: 10
+                description: Timeout in seconds for the HTTP connection. Defaults to
+                  10 seconds.
+                type: integer
+              tlsInsecureSkipVerify:
+                default: false
+                description: Ignore TLS CA verification. It's recommended to set `caConfigMap`
+                  instead.
+                type: boolean
+            required:
+            - realm
+            - timeout
+            type: object
+          status:
+            description: KeycloakEndpointStatus defines the observed state of KeycloakEndpoint
+            properties:
+              lastSuccess:
+                format: date-time
+                type: string
+              message:
+                type: string
+              phase:
+                description: Whether the CRD could connect to the keycloak endpoint
+                  successfully
+                type: string
+              version:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

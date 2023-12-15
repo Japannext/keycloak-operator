@@ -1,0 +1,173 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: keycloakclientscopes.keycloak.japannext.co.jp
+spec:
+  group: keycloak.japannext.co.jp
+  names:
+    categories:
+    - keycloak
+    kind: KeycloakClientScope
+    listKind: KeycloakClientScopeList
+    plural: keycloakclientscopes
+    shortNames:
+    - kcs
+    singular: keycloakclientscope
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Realm of the client scope
+      jsonPath: .spec.realm
+      name: REALM
+      type: string
+    - description: Authentication protocol used by the client
+      jsonPath: .spec.config.protocol
+      name: PROTOCOL
+      type: string
+    - description: The status of the realm
+      jsonPath: .status.resource.phase
+      name: STATUS
+      type: string
+    - description: The last time the resource was changed
+      jsonPath: .status.resource.lastChanged
+      name: LAST CHANGED
+      priority: 1
+      type: date
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: KeycloakClientScope is the Schema for the keycloakclientscopes
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KeycloakClientScopeSpec defines the desired state of KeycloakClientScope
+            properties:
+              config:
+                description: ClientScope is a ClientScope
+                properties:
+                  attributes:
+                    description: ClientScopeAttributes are attributes of client scopes
+                    properties:
+                      consent.screen.text:
+                        type: string
+                      display.on.consent.screen:
+                        type: string
+                      include.in.token.scope:
+                        type: string
+                    type: object
+                  description:
+                    default: ""
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  protocol:
+                    default: openid-connect
+                    enum:
+                    - openid-connect
+                    - saml
+                    type: string
+                  protocolMappers:
+                    items:
+                      description: ProtocolMapper representation
+                      properties:
+                        config:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        consentRequired:
+                          default: false
+                          type: boolean
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        protocol:
+                          type: string
+                        protocolMapper:
+                          enum:
+                          - oidc-acr-mapper
+                          - oidc-address-mapper
+                          - oidc-allowed-origins-mapper
+                          - oidc-audience-mapper
+                          - oidc-audience-resolve-mapper
+                          - oidc-claims-param-token-mapper
+                          - oidc-full-name-mapper
+                          - oidc-group-membership-mapper
+                          - oidc-hardcoded-claim-mapper
+                          - oidc-hardcoded-role-mapper
+                          - oidc-role-name-mapper
+                          - oidc-sha256-pairwise-sub-mapper
+                          - oidc-usermodel-attribute-mapper
+                          - oidc-usermodel-client-role-mapper
+                          - oidc-usermodel-property-mapper
+                          - oidc-usermodel-realm-role-mapper
+                          - oidc-usersessionmodel-note-mapper
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              endpoint:
+                description: Select a KeycloakEndpoint
+                properties:
+                  kind:
+                    default: KeycloakEndpoint
+                    description: Kind of the resource representing a Keycloak endpoint
+                    enum:
+                    - KeycloakEndpoint
+                    - KeycloakClusterEndpoint
+                    type: string
+                  name:
+                    description: Name of the KeycloakEndpoint/KeycloakClusterEndpoint
+                      resource
+                    type: string
+                type: object
+              realm:
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
+            required:
+            - config
+            - realm
+            type: object
+          status:
+            description: KeycloakClientScopeStatus defines the observed state of KeycloakClientScope
+            properties:
+              resource:
+                description: The status of the keycloak resource
+                properties:
+                  lastChanged:
+                    description: The time the resource was last updated.
+                    format: date-time
+                    type: string
+                  phase:
+                    description: Whether the resource is synced, not synced, failed
+                      to sync, etc
+                    type: string
+                type: object
+              scopeID:
+                description: The ID of the client scope deployed
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

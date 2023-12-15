@@ -1,0 +1,29 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "keycloak-operator.fullname" . }}-mutating-webhook-configuration
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "keycloak-operator.fullname" . }}-serving-cert
+  labels:
+  {{- include "keycloak-operator.labels" . | nindent 4 }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "keycloak-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakrealm
+  failurePolicy: Fail
+  name: mkeycloakrealm.kb.io
+  rules:
+  - apiGroups:
+    - keycloak.japannext.co.jp
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - keycloakrealms
+  sideEffects: None

@@ -1,0 +1,12 @@
+apiVersion: keycloak.japannext.co.jp/v1alpha2
+kind: KeycloakRealmRole
+metadata:
+  labels:
+    app.kubernetes.io/name: keycloakrealmrole
+    app.kubernetes.io/instance: keycloakrealmrole-sample
+    app.kubernetes.io/part-of: keycloak-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: keycloak-operator
+  name: keycloakrealmrole-sample
+spec:
+  # TODO(user): Add fields here

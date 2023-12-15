@@ -1,0 +1,6 @@
+# Use the 'create api' subcommand to add watches to this file.
+- group: keycloak.japannext.co.jp
+  version: v1alpha1
+  kind: KeycloakEndpoint
+  chart: helm-charts/keycloakendpoint
+#+kubebuilder:scaffold:watch

@@ -1,0 +1,107 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclusterendpoints
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclusterendpoints/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclusterendpoints/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakendpoints
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakendpoints/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakendpoints/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakrealms
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakrealms/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakrealms/status
+  verbs:
+  - get
+  - patch
+  - update

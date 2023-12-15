@@ -1,0 +1,161 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: keycloakclientscopeprotocolmappers.keycloak.japannext.co.jp
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  labels:
+  {{- include "keycloak-operator.labels" . | nindent 4 }}
+spec:
+  group: keycloak.japannext.co.jp
+  names:
+    categories:
+    - keycloak
+    kind: KeycloakClientScopeProtocolMapper
+    listKind: KeycloakClientScopeProtocolMapperList
+    plural: keycloakclientscopeprotocolmappers
+    shortNames:
+    - kcspm
+    singular: keycloakclientscopeprotocolmapper
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: Realm of the client scope
+      jsonPath: .spec.realm
+      name: REALM
+      type: string
+    - description: Name of the client scope
+      jsonPath: .spec.clientScope
+      name: SCOPE
+      type: string
+    - description: The status of the realm
+      jsonPath: .status.resource.phase
+      name: STATUS
+      type: string
+    - description: The last time the resource was changed
+      jsonPath: .status.resource.lastChanged
+      name: LAST CHANGED
+      priority: 1
+      type: date
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: KeycloakClientScopeProtocolMapper is the Schema for the keycloakclientscopeprotocolmappers
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KeycloakClientScopeProtocolMapperSpec defines the desired state
+              of KeycloakClientScopeProtocolMapper
+            properties:
+              clientScope:
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
+              config:
+                description: ProtocolMapper representation
+                properties:
+                  config:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  consentRequired:
+                    default: false
+                    type: boolean
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  protocol:
+                    type: string
+                  protocolMapper:
+                    enum:
+                    - oidc-acr-mapper
+                    - oidc-address-mapper
+                    - oidc-allowed-origins-mapper
+                    - oidc-audience-mapper
+                    - oidc-audience-resolve-mapper
+                    - oidc-claims-param-token-mapper
+                    - oidc-full-name-mapper
+                    - oidc-group-membership-mapper
+                    - oidc-hardcoded-claim-mapper
+                    - oidc-hardcoded-role-mapper
+                    - oidc-role-name-mapper
+                    - oidc-sha256-pairwise-sub-mapper
+                    - oidc-usermodel-attribute-mapper
+                    - oidc-usermodel-client-role-mapper
+                    - oidc-usermodel-property-mapper
+                    - oidc-usermodel-realm-role-mapper
+                    - oidc-usersessionmodel-note-mapper
+                    type: string
+                type: object
+              endpoint:
+                description: Select a KeycloakEndpoint
+                properties:
+                  kind:
+                    default: KeycloakEndpoint
+                    description: Kind of the resource representing a Keycloak endpoint
+                    enum:
+                    - KeycloakEndpoint
+                    - KeycloakClusterEndpoint
+                    type: string
+                  name:
+                    description: Name of the KeycloakEndpoint/KeycloakClusterEndpoint
+                      resource
+                    type: string
+                type: object
+              realm:
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
+            required:
+            - clientScope
+            - realm
+            type: object
+          status:
+            description: KeycloakClientScopeProtocolMapperStatus defines the observed
+              state of KeycloakClientScopeProtocolMapper
+            properties:
+              clientScopeID:
+                description: The ID of the client scope
+                type: string
+              protocolMapperID:
+                description: The ID of the protocol mapper managed
+                type: string
+              resource:
+                description: The status of the keycloak resource
+                properties:
+                  lastChanged:
+                    description: The time the resource was last updated.
+                    format: date-time
+                    type: string
+                  phase:
+                    description: Whether the resource is synced, not synced, failed
+                      to sync, etc
+                    type: string
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

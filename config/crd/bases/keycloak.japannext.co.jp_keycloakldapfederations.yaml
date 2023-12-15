@@ -1,0 +1,364 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: keycloakldapfederations.keycloak.japannext.co.jp
+spec:
+  group: keycloak.japannext.co.jp
+  names:
+    categories:
+    - keycloak
+    kind: KeycloakLDAPFederation
+    listKind: KeycloakLDAPFederationList
+    plural: keycloakldapfederations
+    shortNames:
+    - kldap
+    singular: keycloakldapfederation
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.resource.phase
+      name: STATUS
+      type: string
+    - description: The last time the resource was changed
+      jsonPath: .status.resource.lastChanged
+      name: LAST CHANGED
+      priority: 1
+      type: date
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: KeycloakLDAPFederation is the Schema for the keycloakldapfederations
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KeycloakLDAPFederationSpec defines the desired state of KeycloakLDAPFederation
+            properties:
+              config:
+                properties:
+                  allowKerberosAuthentication:
+                    default: false
+                    description: Enable/disable HTTP authentication of users with
+                      SPNEGO/Kerberos tokens. The data about authenticated users will
+                      be provisioned from this LDAP server.
+                    type: boolean
+                  batchSizeForSync:
+                    default: 1000
+                    description: Count of LDAP users to be imported from LDAP to Keycloak
+                      within a single transaction
+                    type: integer
+                  bindCredentialsSecret:
+                    default: ""
+                    description: Name of a kubernetes secret holding the `bind_dn`
+                      and `bind_password` necessary to connect
+                    type: string
+                  cachePolicy:
+                    default: DEFAULT
+                    description: Cache Policy for this storage provider. 'DEFAULT'
+                      is whatever the default settings are for the global cache. 'EVICT_DAILY'
+                      is a time of day every day that the cache will be invalidated.
+                      'EVICT_WEEKLY' is a day of the week and time the cache will
+                      be invalidated. 'MAX_LIFESPAN' is the time in milliseconds that
+                      will be the lifespan of a cache entry.
+                    enum:
+                    - DEFAULT
+                    - EVICT_DAILY
+                    - EVICT_WEEKLY
+                    - MAX_LIFESPAN
+                    type: string
+                  changedSyncPeriod:
+                    description: Period for synchronization of changed or newly created
+                      LDAP users in seconds
+                    type: string
+                  connectionPooling:
+                    default: false
+                    description: Determines if Keycloak should use connection pooling
+                      for accessing LDAP server.
+                    type: boolean
+                  connectionTimeout:
+                    description: LDAP connection timeout in milliseconds
+                    type: string
+                  connectionUrl:
+                    description: Connection URL to your LDAP server
+                    type: string
+                  editMode:
+                    default: READ_ONLY
+                    description: READ_ONLY is a read-only LDAP store. WRITABLE means
+                      data will be synced back to LDAP on demand. UNSYNCED means user
+                      data will be imported, but not synced back to LDAP.
+                    enum:
+                    - READ_ONLY
+                    - WRITABLE
+                    - UNSYNCED
+                    type: string
+                  enabled:
+                    default: true
+                    description: Enable or disable the LDAP federation
+                    type: boolean
+                  evictionDay:
+                    default: sunday
+                    description: Day of the week the entry will become invalid
+                    enum:
+                    - monday
+                    - tuesday
+                    - wednesday
+                    - thursday
+                    - friday
+                    - saturday
+                    - sunday
+                    type: string
+                  evictionHour:
+                    default: 0
+                    description: Hour of the day the entry will become invalid (when
+                      selecting 'EVICT_DAILY' or 'EVICT_WEEKLY' cachePolicy)
+                    maximum: 23
+                    minimum: 0
+                    type: integer
+                  evictionMinute:
+                    default: 0
+                    description: Minute of the hour the entry will become invalid
+                      (when selecting 'EVICT_DAILY' or 'EVICT_WEEKLY' cachePolicy)
+                    maximum: 59
+                    minimum: 0
+                    type: integer
+                  fullSyncPeriod:
+                    description: Period for full synchronization in seconds
+                    type: string
+                  importEnabled:
+                    default: true
+                    description: If true, LDAP users will be imported into the Keycloak
+                      DB and synced by the configured sync policies.
+                    type: boolean
+                  maxLifespan:
+                    default: 86400000
+                    description: Max lifespan of cache entry in milliseconds (when
+                      selecting 'MAX_LIFESPAN' cachePolicy)
+                    type: integer
+                  name:
+                    description: Name of the LDAP federation
+                    type: string
+                  pagination:
+                    default: false
+                    description: Whether the LDAP server supports pagination
+                    type: boolean
+                  periodicChangedUsersSync:
+                    default: false
+                    description: Whether periodic synchronization of changed or newly
+                      created LDAP users to Keycloak should be enabled or not
+                    type: boolean
+                  periodicFullSync:
+                    default: false
+                    description: Whether periodic full synchronization of LDAP users
+                      to Keycloak should be enabled or not
+                    type: boolean
+                  priority:
+                    default: 0
+                    type: integer
+                  rdnLDAPAttribute:
+                    default: cn
+                    description: Name of the LDAP attribute, which is used as RDN
+                      (top attribute) of typical user DN. Usually it's the same as
+                      the Username LDAP attribute, however it is not required. For
+                      example for Active directory, it is common to use 'cn' as RDN
+                      attribute when username attribute might be 'sAMAccountName'.
+                    type: string
+                  searchScope:
+                    default: "2"
+                    description: For one level, the search applies only for users
+                      in the DNs specified by User DNs. For subtree, the search applies
+                      to the whole subtree. See LDAP documentation for more details.
+                    enum:
+                    - "1"
+                    - "2"
+                    type: string
+                  startTls:
+                    default: false
+                    description: Encrypts the connection to LDAP using STARTTLS, which
+                      will disable connection pooling
+                    type: boolean
+                  syncRegistrations:
+                    default: false
+                    type: boolean
+                  trustEmail:
+                    default: false
+                    type: boolean
+                  useKerberosForPasswordAuthentication:
+                    default: false
+                    description: User Kerberos login module for authenticating username/password
+                      against Kerberos server instead of authenticating against LDAP
+                      server with Directory Service API
+                    type: boolean
+                  usePasswordModifyExtendedOp:
+                    default: false
+                    description: Use the LDAPv3 Password Modify Extended Operation
+                      (RFC-3062). The password modify extended operation usually requires
+                      that LDAP user already has password in the LDAP server. So when
+                      this is used with 'Sync Registrations', it can be good to add
+                      also 'Hardcoded LDAP attribute mapper' with randomly generated
+                      initial password.
+                    type: boolean
+                  useTruststoreSpi:
+                    default: ldapsOnly
+                    description: Specifies whether LDAP connection will use the Truststore
+                      SPI with the truststore configured in standalone.xml/domain.sml.
+                      'always' means that it will always use it. 'never' means that
+                      it will not use it. 'ldapsOnly' means that it will use it if
+                      your connection URL use ldaps. Note that even if standalone.xml/domain.xml
+                      is not configured, the default java cacerts or certificate specified
+                      by 'javax.net.ssl.trustStore' property will be used.
+                    enum:
+                    - always
+                    - ldapsOnly
+                    - never
+                    type: string
+                  userObjectClasses:
+                    default:
+                    - '''person'''
+                    description: 'All values of LDAP objectClass attribute for users
+                      in LDAP, divided by commas. For example: ''inetOrgPerson, organizationalPerson''.
+                      Newly created Keycloak users will be written to LDAP with all
+                      those object classes and existing LDAP user records are found
+                      just if they contain all those object classes.'
+                    items:
+                      type: string
+                    type: array
+                  usernameLDAPAttribute:
+                    default: samaccountname
+                    description: Name of the LDAP attribute, which is mapped as Keycloak
+                      username. For many LDAP server vendors it can be 'uid'. For
+                      Active directory it can be 'sAMAccountName' or 'cn'. The attribute
+                      should be filled for all LDAP user records you want to import
+                      from LDAP to Keycloak.
+                    type: string
+                  usersDn:
+                    description: Full DN of LDAP tree where your users are. This DN
+                      is the parent of LDAP users. It could be for example 'ou=users,dc=example,dc=com'
+                      assuming that your typical user will have DN like 'uid='john',ou=users,dc=example,dc=com'.
+                    type: string
+                  uuidLDAPAttribute:
+                    default: objectGUID
+                    description: Name of the LDAP attribute, which is used as a unique
+                      object identifier (UUID) for objects in LDAP. For many LDAP
+                      server vendors, it is 'entryUUID'; however some are different.
+                      For example, for Active directory it should be 'objectGUID'.
+                      If your LDAP server does not support the notion of UUID, you
+                      can use any other attribute that is supposed to be unique among
+                      LDAP users in tree. For example 'uid' or 'entryDN'.
+                    type: string
+                  validatePasswordPolicy:
+                    default: false
+                    description: Determines if Keycloak should validate the password
+                      with the realm password policy before updating it
+                    type: boolean
+                  vendor:
+                    description: LDAP vendor (provider)
+                    enum:
+                    - ad
+                    - rhds
+                    - other
+                    - tivoli
+                    - edirectory
+                    type: string
+                required:
+                - allowKerberosAuthentication
+                - batchSizeForSync
+                - connectionPooling
+                - connectionUrl
+                - enabled
+                - importEnabled
+                - name
+                - pagination
+                - periodicChangedUsersSync
+                - periodicFullSync
+                - priority
+                - searchScope
+                - startTls
+                - syncRegistrations
+                - trustEmail
+                - usePasswordModifyExtendedOp
+                - useTruststoreSpi
+                - userObjectClasses
+                - validatePasswordPolicy
+                type: object
+              endpoint:
+                description: Select a KeycloakEndpoint
+                properties:
+                  kind:
+                    default: KeycloakEndpoint
+                    description: Kind of the resource representing a Keycloak endpoint
+                    enum:
+                    - KeycloakEndpoint
+                    - KeycloakClusterEndpoint
+                    type: string
+                  name:
+                    description: Name of the KeycloakEndpoint/KeycloakClusterEndpoint
+                      resource
+                    type: string
+                type: object
+              realm:
+                type: string
+            required:
+            - realm
+            type: object
+          status:
+            description: KeycloakLDAPFederationStatus defines the observed state of
+              KeycloakLDAPFederation
+            properties:
+              componentID:
+                description: ID of the component representing the managed LDAP federation
+                type: string
+              resource:
+                description: The status of the keycloak resource
+                properties:
+                  lastChanged:
+                    description: The time the resource was last updated.
+                    format: date-time
+                    type: string
+                  phase:
+                    description: Whether the resource is synced, not synced, failed
+                      to sync, etc
+                    type: string
+                type: object
+              result:
+                description: Result of the last successful sync
+                properties:
+                  added:
+                    type: integer
+                  failed:
+                    type: integer
+                  ignored:
+                    type: boolean
+                  removed:
+                    type: integer
+                  status:
+                    type: string
+                  updated:
+                    type: integer
+                required:
+                - added
+                - failed
+                - ignored
+                - removed
+                - status
+                - updated
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
