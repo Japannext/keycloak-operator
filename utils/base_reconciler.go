@@ -13,7 +13,7 @@ import (
 
 type Object interface {
 	client.Object
-	BaseStatus() *api.BaseStatus
+	ApiStatus() *api.ApiStatus
 	Endpoint() api.EndpointSelector
 	Realm() string
 }

@@ -80,7 +80,7 @@ func reconcileEndpoint(r *utils.BaseReconciler, ctx context.Context, i Endpoint)
 		msg := fmt.Sprintf("failed to connect to endpoint '%s'", spec.BaseUrl)
 		r.Event(i, "Warning", "Connect", fmt.Sprintf("%s: %s", msg, err))
 		if status.Phase != "Error" || status.Message != msg {
-			patch := client.StrategicMergeFrom(i)
+			patch := client.MergeFrom(i)
 			status.Phase = "Error"
 			status.Message = msg
 			if err := r.Patch(ctx, i, patch); err != nil {

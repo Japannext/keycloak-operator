@@ -18,15 +18,12 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	diff "github.com/r3labs/diff/v3"
 
-	v1alpha2 "github.com/japannext/keycloak-operator/api/v1alpha2"
+	"github.com/japannext/keycloak-operator/api/v1alpha2"
 	"github.com/japannext/keycloak-operator/gocloak"
 	"github.com/japannext/keycloak-operator/utils"
 )
@@ -58,17 +55,9 @@ func (r *KeycloakRealmReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return utils.HandleError(err)
 	}
 
-	// Deps
-
-	patch := client.StrategicMergeFrom(i)
-
 	// Sync realm
 	if err := r.syncRealm(ctx, gc, token, i); err != nil {
 		return utils.HandleError(err)
-	}
-
-	if err := r.Status().Patch(ctx, i, patch); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to patch resource status: %w", err)
 	}
 
 	return ctrl.Result{}, nil
@@ -76,7 +65,6 @@ func (r *KeycloakRealmReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 func (r *KeycloakRealmReconciler) syncRealm(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakRealm) error {
 
-	log.FromContext(ctx).V(2).Info("New sync triggered for realm")
 	api := r.Api(ctx, i)
 
 	realmName := utils.Unwrap(i.Spec.Config.Realm)
@@ -120,7 +108,9 @@ func (r *KeycloakRealmReconciler) syncRealm(ctx context.Context, gc *gocloak.GoC
 		if err != nil {
 			return api.Error("Create", "failed to create resource", err)
 		}
-		i.Status.RealmID = id
+		if err := r.CustomPatch(ctx, i, "realmId", id); err != nil {
+			return err
+		}
 		return api.Created()
 	}
 
@@ -139,7 +129,10 @@ func (r *KeycloakRealmReconciler) syncRealm(ctx context.Context, gc *gocloak.GoC
 		return api.Updated()
 	}
 
-	i.Status.RealmID = utils.Unwrap(realm.ID)
+	id := utils.Unwrap(realm.ID)
+	if err := r.CustomPatch(ctx, i, "realmId", id); err != nil {
+		return err
+	}
 	return api.NoChange()
 }
 

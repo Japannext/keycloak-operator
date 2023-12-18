@@ -22,16 +22,14 @@ func MarkedAsDeleted(i client.Object) bool {
 }
 
 const (
-	finalizer            = "keycloak.japannext.co.jp/finalizer"
-	addFinalizerPatch    = `{"metadata": {"finalizers": ["keycloak.japannext.co.jp/finalizer"]}}`
-	removeFinalizerPatch = `{"metadata": {"finalizers": null}}`
+	finalizer = "keycloak.japannext.co.jp/finalizer"
 )
 
 // Append the finalizer to the object
 func (r *BaseReconciler) AppendFinalizer(ctx context.Context, i client.Object) error {
 	if !controllerutil.ContainsFinalizer(i, finalizer) {
 		opts := &client.PatchOptions{FieldManager: "keycloak-operator"}
-		patch := client.RawPatch(types.MergePatchType, []byte(addFinalizerPatch))
+		patch := client.RawPatch(types.MergePatchType, []byte(`{"metadata": {"finalizers": ["keycloak.japannext.co.jp/finalizer"]}}`))
 		if err := r.Patch(ctx, i, patch, opts); err != nil {
 			return fmt.Errorf("failed to add finalizer: %w", err)
 		}
@@ -42,7 +40,7 @@ func (r *BaseReconciler) AppendFinalizer(ctx context.Context, i client.Object) e
 func (r *BaseReconciler) RemoveFinalizer(ctx context.Context, i client.Object) error {
 	if controllerutil.ContainsFinalizer(i, finalizer) {
 		opts := &client.PatchOptions{FieldManager: "keycloak-operator"}
-		patch := client.RawPatch(types.MergePatchType, []byte(removeFinalizerPatch))
+		patch := client.RawPatch(types.MergePatchType, []byte(`{"metadata": {"finalizers": null}}`))
 		if err := r.Patch(ctx, i, patch, opts); err != nil {
 			return fmt.Errorf("failed to remove finalizer: %w", err)
 		}

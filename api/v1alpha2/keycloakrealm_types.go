@@ -30,8 +30,8 @@ import (
 // +kubebuilder:resource:shortName=kr,categories=keycloak
 // +kubebuilder:printcolumn:name="DISPLAY NAME",type="string",JSONPath=".spec.config.displayName",description="Display name of the realm"
 // +kubebuilder:printcolumn:name="ENABLED",type="boolean",JSONPath=".spec.config.enabled",description="Whether the realm is enabled"
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.resource.phase",description="The status of the realm"
-// +kubebuilder:printcolumn:name="LAST CHANGED",priority=1,type="date",JSONPath=".status.resource.lastChanged",description="The last time the resource was changed"
+// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.api.phase",description="The status of the realm"
+// +kubebuilder:printcolumn:name="LAST TRANSITION",priority=1,type="date",JSONPath=".status.api.lastTransitionTime",description="The last time the resource was changed"
 type KeycloakRealm struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -54,15 +54,17 @@ type KeycloakRealmSpec struct {
 // +kubebuilder:validation:Optional
 type KeycloakRealmStatus struct {
 	// The ID of the realm managed
+  // +optional
 	RealmID string `json:"realmId,omitempty"`
 
 	// Base status
-	Base BaseStatus `json:",inline"`
+  // +optional
+	Api ApiStatus `json:"api,omitempty"`
 }
 
 func (i *KeycloakRealm) Realm() string              { return *i.Spec.Config.Realm }
 func (i *KeycloakRealm) Endpoint() EndpointSelector { return i.Spec.Endpoint }
-func (i *KeycloakRealm) BaseStatus() *BaseStatus    { return &i.Status.Base }
+func (i *KeycloakRealm) ApiStatus() *ApiStatus      { return &i.Status.Api }
 
 // KeycloakRealmList contains a list of KeycloakRealm
 // +kubebuilder:object:root=true

@@ -9,30 +9,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	api "github.com/japannext/keycloak-operator/api/v1alpha2"
+	"github.com/japannext/keycloak-operator/api/v1alpha2"
 	"github.com/japannext/keycloak-operator/gocloak"
 )
 
 // spec, err := ExtractEndpointSpec(ctx, r.Client, i.Spec.Endpoint, ns)
 // IsForbidden(spec.Rules)
 // gc, err := ExtractEndpointFromSpec(spec)
-func extractEndpointSpec(r *BaseReconciler, ctx context.Context, e api.EndpointSelector, ns string) (api.KeycloakEndpointSpec, error) {
+func extractEndpointSpec(r *BaseReconciler, ctx context.Context, e v1alpha2.EndpointSelector, ns string) (v1alpha2.KeycloakEndpointSpec, error) {
 	if e.Kind == "KeycloakEndpoint" {
-		i := &api.KeycloakEndpoint{}
+		i := &v1alpha2.KeycloakEndpoint{}
 		err := r.Get(ctx, client.ObjectKey{Namespace: ns, Name: e.Name}, i)
 		return i.Spec, err
 
 	} else if e.Kind == "KeycloakClusterEndpoint" {
-		i := &api.KeycloakClusterEndpoint{}
+		i := &v1alpha2.KeycloakClusterEndpoint{}
 		err := r.Get(ctx, client.ObjectKey{Name: e.Name}, i)
 		return i.Spec, err
 
 	} else {
-		return api.KeycloakEndpointSpec{}, fmt.Errorf("Unsupported kind '%s'", e.Kind)
+		return v1alpha2.KeycloakEndpointSpec{}, fmt.Errorf("Unsupported kind '%s'", e.Kind)
 	}
 }
 
-func ExtractEndpointFromSpec(r *BaseReconciler, ctx context.Context, spec api.KeycloakEndpointSpec, ns string) (*gocloak.GoCloak, string, error) {
+func ExtractEndpointFromSpec(r *BaseReconciler, ctx context.Context, spec v1alpha2.KeycloakEndpointSpec, ns string) (*gocloak.GoCloak, string, error) {
 
 	username, password, err := extractBasicAuthSecret(r, ctx, spec.BasicAuthSecret, ns)
 	if err != nil {
@@ -70,7 +70,6 @@ func ExtractEndpointFromSpec(r *BaseReconciler, ctx context.Context, spec api.Ke
 // Extract the endpoint, but deal with several kind of errors
 func (r *BaseReconciler) ExtractEndpoint(ctx context.Context, i Object) (*gocloak.GoCloak, string, error) {
 	log := log.FromContext(ctx)
-	base := i.BaseStatus()
 	ns := i.GetNamespace()
 	realm := i.Realm()
 	e := i.Endpoint()
@@ -78,11 +77,11 @@ func (r *BaseReconciler) ExtractEndpoint(ctx context.Context, i Object) (*gocloa
 	if err != nil {
 		err = fmt.Errorf("could not find endpoint %s/%s: %w", getKind(i), i.GetName(), err)
 		r.Event(i, "Warning", "Endpoint", err.Error())
-		patch := client.StrategicMergeFrom(i)
-		base.Phase = "NoEndpoint"
-		base.Ready = false
-		if err := r.Status().Patch(ctx, i, patch); err != nil {
-			return nil, "", fmt.Errorf("failed to patch status: %w", err)
+		status := i.ApiStatus()
+		if status.Phase != v1alpha2.NO_ENDPOINT {
+			if err := r.Status().Patch(ctx, i, makePatch(v1alpha2.NO_ENDPOINT)); err != nil {
+				return nil, "", fmt.Errorf("failed to patch resource status (no-endpoint): %w", err)
+			}
 		}
 		return nil, "", err
 	}
@@ -94,11 +93,11 @@ func (r *BaseReconciler) ExtractEndpoint(ctx context.Context, i Object) (*gocloa
 			}
 			msg := fmt.Sprintf("Rule '%s': namespace '%s' is forbidden to manage '%s' on realm '%s'", ruleName, ns, getKind(i), realm)
 			r.Event(i, "Warning", "Authz", msg)
-			patch := client.StrategicMergeFrom(i)
-			base.Phase = "Forbidden"
-			base.Ready = false
-			if err := r.Status().Patch(ctx, i, patch); err != nil {
-				return nil, "", fmt.Errorf("failed to patch status: %w", err)
+			status := i.ApiStatus()
+			if status.Phase != v1alpha2.FORBIDDEN {
+				if err := r.Status().Patch(ctx, i, makePatch(v1alpha2.FORBIDDEN)); err != nil {
+					return nil, "", fmt.Errorf("failed to patch resource status (forbidden): %w", err)
+				}
 			}
 			return nil, "", fmt.Errorf(msg)
 		}
@@ -110,11 +109,11 @@ func (r *BaseReconciler) ExtractEndpoint(ctx context.Context, i Object) (*gocloa
 	if err != nil {
 		err = fmt.Errorf("failed to connect to '%s': %w", spec.BaseUrl, err)
 		r.Event(i, "Warning", "Endpoint", err.Error())
-		patch := client.StrategicMergeFrom(i)
-		base.Phase = "Disconnected"
-		base.Ready = false
-		if err := r.Status().Patch(ctx, i, patch); err != nil {
-			return nil, "", fmt.Errorf("failed to patch status: %w", err)
+		status := i.ApiStatus()
+		if status.Phase != v1alpha2.NOT_CONNECTED {
+			if err := r.Status().Patch(ctx, i, makePatch(v1alpha2.NOT_CONNECTED)); err != nil {
+				return nil, "", fmt.Errorf("failed to patch resource status (not-connected): %w", err)
+			}
 		}
 		return nil, "", Reschedule{}
 	}
