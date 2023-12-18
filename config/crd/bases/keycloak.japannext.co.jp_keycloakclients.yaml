@@ -28,11 +28,11 @@ spec:
       name: PROTOCOL
       type: string
     - description: The status of the realm
-      jsonPath: .status.resource.phase
+      jsonPath: .status.api.phase
       name: STATUS
       type: string
     - description: The last time the resource was changed
-      jsonPath: .status.resource.lastChanged
+      jsonPath: .status.api.lastTransitionTime
       name: LAST CHANGED
       priority: 1
       type: date
@@ -482,13 +482,10 @@ spec:
             type: object
           status:
             properties:
-              clientID:
-                description: The ID of the OIDC/SAML client that is created / managed
-                type: string
-              resource:
-                description: The status of the keycloak resource
+              api:
+                description: Base status
                 properties:
-                  lastChanged:
+                  lastTransitionTime:
                     description: The time the resource was last updated.
                     format: date-time
                     type: string
@@ -497,6 +494,9 @@ spec:
                       to sync, etc
                     type: string
                 type: object
+              clientID:
+                description: The ID of the OIDC/SAML client that is created / managed
+                type: string
             type: object
         type: object
     served: true

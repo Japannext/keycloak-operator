@@ -21,10 +21,12 @@ func makeCustomPatch(key, value string) client.Patch {
 	return client.RawPatch(types.MergePatchType, []byte(text))
 }
 
-func (r *BaseReconciler) CustomPatch(ctx context.Context, i client.Object, key, value string) error {
-	patch := makeCustomPatch(key, value)
-	if err := r.Status().Patch(ctx, i, patch); err != nil {
-		return fmt.Errorf("failed to patch resource status (%s): %w", key, err)
+func (r *BaseReconciler) CustomPatch(ctx context.Context, i client.Object, key, value, previous string) error {
+	if previous != value {
+		patch := makeCustomPatch(key, value)
+		if err := r.Status().Patch(ctx, i, patch); err != nil {
+			return fmt.Errorf("failed to patch resource status (%s): %w", key, err)
+		}
 	}
 	return nil
 }

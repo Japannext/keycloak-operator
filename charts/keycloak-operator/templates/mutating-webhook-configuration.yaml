@@ -13,6 +13,66 @@ webhooks:
     service:
       name: '{{ include "keycloak-operator.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
+      path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakclient
+  failurePolicy: Fail
+  name: mkeycloakclient.kb.io
+  rules:
+  - apiGroups:
+    - keycloak.japannext.co.jp
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - keycloakclients
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "keycloak-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakclientrole
+  failurePolicy: Fail
+  name: mkeycloakclientrole.kb.io
+  rules:
+  - apiGroups:
+    - keycloak.japannext.co.jp
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - keycloakclientroles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "keycloak-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakldapfederation
+  failurePolicy: Fail
+  name: mkeycloakldapfederation.kb.io
+  rules:
+  - apiGroups:
+    - keycloak.japannext.co.jp
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - keycloakldapfederations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ include "keycloak-operator.fullname" . }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
       path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakrealm
   failurePolicy: Fail
   name: mkeycloakrealm.kb.io

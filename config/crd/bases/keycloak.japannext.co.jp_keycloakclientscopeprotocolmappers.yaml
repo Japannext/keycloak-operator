@@ -28,11 +28,11 @@ spec:
       name: SCOPE
       type: string
     - description: The status of the realm
-      jsonPath: .status.resource.phase
+      jsonPath: .status.api.phase
       name: STATUS
       type: string
     - description: The last time the resource was changed
-      jsonPath: .status.resource.lastChanged
+      jsonPath: .status.api.lastTransitionTime
       name: LAST CHANGED
       priority: 1
       type: date
@@ -128,16 +128,10 @@ spec:
             description: KeycloakClientScopeProtocolMapperStatus defines the observed
               state of KeycloakClientScopeProtocolMapper
             properties:
-              clientScopeID:
-                description: The ID of the client scope
-                type: string
-              protocolMapperID:
-                description: The ID of the protocol mapper managed
-                type: string
-              resource:
-                description: The status of the keycloak resource
+              api:
+                description: Base status
                 properties:
-                  lastChanged:
+                  lastTransitionTime:
                     description: The time the resource was last updated.
                     format: date-time
                     type: string
@@ -146,6 +140,12 @@ spec:
                       to sync, etc
                     type: string
                 type: object
+              clientScopeID:
+                description: The ID of the client scope
+                type: string
+              protocolMapperID:
+                description: The ID of the protocol mapper managed
+                type: string
             type: object
         type: object
     served: true

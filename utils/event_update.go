@@ -1,13 +1,11 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	diff "github.com/r3labs/diff/v3"
@@ -28,9 +26,9 @@ func makePath(path []string) string {
 	return b.String()
 }
 
-func EventUpdate(r *BaseReconciler, ctx context.Context, i client.Object, changelog diff.Changelog) {
-	logger := log.FromContext(ctx)
-	r.Event(i, "Normal", "Update", fmt.Sprintf("Change triggered by %d field changes", len(changelog)))
+func (api *ApiHelper) EventUpdate(changelog diff.Changelog) {
+	logger := log.FromContext(api.Context)
+	api.Event(api.Object, "Normal", "Update", fmt.Sprintf("Change triggered by %d field changes", len(changelog)))
 	for _, c := range changelog {
 		m1 := fmt.Sprintf("change triggered by %s (%s): ", makePath(c.Path), c.Type)
 		var m2 string

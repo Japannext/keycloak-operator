@@ -54,11 +54,11 @@ type KeycloakRealmSpec struct {
 // +kubebuilder:validation:Optional
 type KeycloakRealmStatus struct {
 	// The ID of the realm managed
-  // +optional
+	// +optional
 	RealmID string `json:"realmId,omitempty"`
 
 	// Base status
-  // +optional
+	// +optional
 	Api ApiStatus `json:"api,omitempty"`
 }
 

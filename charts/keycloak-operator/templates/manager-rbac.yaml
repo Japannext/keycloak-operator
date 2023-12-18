@@ -25,9 +25,167 @@ rules:
   resources:
   - secrets
   verbs:
+  - create
   - get
   - list
+  - update
   - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientprotocolmappers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientprotocolmappers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientprotocolmappers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientrolemappings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientrolemappings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientrolemappings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientroles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientroles/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientroles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclients
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclients/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclients/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientscopeprotocolmappers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientscopeprotocolmappers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientscopeprotocolmappers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientscopes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientscopes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakclientscopes/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - keycloak.japannext.co.jp
   resources:
@@ -76,6 +234,84 @@ rules:
   - keycloak.japannext.co.jp
   resources:
   - keycloakendpoints/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakldapfederations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakldapfederations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakldapfederations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakldapmappers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakldapmappers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakldapmappers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakrealmroles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakrealmroles/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - keycloak.japannext.co.jp
+  resources:
+  - keycloakrealmroles/status
   verbs:
   - get
   - patch

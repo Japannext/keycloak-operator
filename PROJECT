@@ -86,15 +86,6 @@ resources:
   controller: true
   domain: japannext.co.jp
   group: keycloak
-  kind: KeycloakLDAPSync
-  path: github.com/japannext/keycloak-operator/api/v1alpha2
-  version: v1alpha2
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: japannext.co.jp
-  group: keycloak
   kind: KeycloakLDAPMapper
   path: github.com/japannext/keycloak-operator/api/v1alpha2
   version: v1alpha2

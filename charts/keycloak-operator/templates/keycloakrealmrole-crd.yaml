@@ -27,11 +27,11 @@ spec:
       name: ROLE
       type: string
     - description: The status of the resource
-      jsonPath: .status.resource.phase
+      jsonPath: .status.api.phase
       name: STATUS
       type: string
     - description: The last time the resource was changed
-      jsonPath: .status.resource.lastChanged
+      jsonPath: .status.api.lastTransitionTime
       name: LAST CHANGED
       priority: 1
       type: date
@@ -128,10 +128,10 @@ spec:
           status:
             description: KeycloakRealmRoleStatus defines the observed state of KeycloakRealmRole
             properties:
-              resource:
-                description: The status of the keycloak resource
+              api:
+                description: Base status
                 properties:
-                  lastChanged:
+                  lastTransitionTime:
                     description: The time the resource was last updated.
                     format: date-time
                     type: string

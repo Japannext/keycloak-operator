@@ -30,7 +30,7 @@ func IsNoReschedule(err error) bool {
 }
 
 func HandleError(err error) (ctrl.Result, error) {
-	reschedule := &Reschedule{}
+	var reschedule *Reschedule
 	if errors.As(err, &reschedule) {
 		return ctrl.Result{RequeueAfter: reschedule.RequeueAfter}, nil
 	}

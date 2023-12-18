@@ -28,18 +28,17 @@ import (
 	"github.com/japannext/keycloak-operator/utils"
 )
 
-// KeycloakRealmReconciler reconciles a KeycloakRealm object
-type KeycloakRealmReconciler struct {
+// KeycloakRealmRoleReconciler reconciles a KeycloakRealmRole object
+type KeycloakRealmRoleReconciler struct {
 	utils.BaseReconciler
 }
 
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealms,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealms/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealms/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealmroles,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealmroles/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealmroles/finalizers,verbs=update
 
-func (r *KeycloakRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	i := &v1alpha2.KeycloakRealm{}
+func (r *KeycloakRealmRoleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	i := &v1alpha2.KeycloakRealmRole{}
 
 	// Resource
 	if err := r.Client.Get(ctx, req.NamespacedName, i); err != nil {
@@ -55,81 +54,79 @@ func (r *KeycloakRealmReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return utils.HandleError(err)
 	}
 
-	// Sync realm
-	if err := r.syncRealm(ctx, gc, token, i); err != nil {
+	// Sync client
+	if err := r.syncRealmRole(ctx, gc, token, i); err != nil {
 		return utils.HandleError(err)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *KeycloakRealmReconciler) syncRealm(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakRealm) error {
+func (r *KeycloakRealmRoleReconciler) syncRealmRole(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakRealmRole) error {
 
+	realm := i.Spec.Realm
+	roleName := utils.Unwrap(i.Spec.Config.Name)
 	api := r.Api(ctx, i)
 
-	realmName := utils.Unwrap(i.Spec.Config.Realm)
-
 	// Fetch
-	realm, err := gc.GetRealm(ctx, token, realmName)
-	_, notFound := utils.IsNotFound(err)
+	role, err := gc.GetRealmRole(ctx, token, realm, roleName)
+	serr, notFound := utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
-		return api.Error("Fetch", "failed to fetch resource", err)
+		api.Error("Fetch", "failed to fetch resource", err)
 	}
+	rid := utils.Unwrap(role.ID)
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
-		if notFound {
+		if notFound || rid == "" {
 			return api.AlreadyDeleted()
 		}
-		// Deleting
-		err := gc.DeleteRealm(ctx, token, realmName)
+		// Deleting...
+		err := gc.DeleteRealmRole(ctx, token, realm, roleName)
 		if _, notFound := utils.IsNotFound(err); notFound {
 			return api.AlreadyDeleted()
 		}
 		if err != nil {
 			return api.Error("Delete", "failed to delete resource", err)
 		}
-		if err := r.RemoveFinalizer(ctx, i); err != nil {
-			return api.Error("Delete", "failed to remove finalizer", err)
-		}
 		// Deleted
 		return api.Deleted()
 	}
-
 	// Adding finalizer
 	if err := r.AppendFinalizer(ctx, i); err != nil {
 		return api.Error("Finalizer", "failed to append finalizer", err)
 	}
+	// Pending
+	if notFound {
+		return api.Waiting(serr.Message)
+	}
 
 	// Creation
-	if notFound {
-		newRealm := i.Spec.Config
-		id, err := gc.CreateRealm(ctx, token, newRealm)
+	if rid == "" {
+		newRole := i.Spec.Config
+		rid, err := gc.CreateRealmRole(ctx, token, realm, newRole)
 		if err != nil {
 			return api.Error("Create", "failed to create resource", err)
 		}
-		if err := r.CustomPatch(ctx, i, "realmId", id, ""); err != nil {
+		if err := r.CustomPatch(ctx, i, "roleID", rid, i.Status.RoleID); err != nil {
 			return err
 		}
 		return api.Created()
 	}
-
-	// Update ID status
-	id := utils.Unwrap(realm.ID)
-	if err := r.CustomPatch(ctx, i, "realmId", id, i.Status.RealmID); err != nil {
+	// Update ID
+	if err := r.CustomPatch(ctx, i, "roleID", rid, i.Status.RoleID); err != nil {
 		return err
 	}
 
 	// Update
-	changelog, err := diff.Diff(i.Spec.Config, *realm)
+	changelog, err := diff.Diff(i.Spec.Config, *role)
 	if err != nil {
-		return api.Error("Update", "failed while doing diff", err)
+		return api.Error("Update", "failed during diff", err)
 	}
 	if len(changelog) > 0 {
 		api.EventUpdate(changelog)
-		updatedRealm := i.Spec.Config
-		updatedRealm.ID = realm.ID
-		if err := gc.UpdateRealm(ctx, token, updatedRealm); err != nil {
+		updatedRole := i.Spec.Config
+		if err := gc.UpdateRealmRole(ctx, token, realm, roleName, updatedRole); err != nil {
 			return api.Error("Update", "failed to update resource", err)
 		}
 		return api.Updated()
@@ -139,8 +136,8 @@ func (r *KeycloakRealmReconciler) syncRealm(ctx context.Context, gc *gocloak.GoC
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *KeycloakRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *KeycloakRealmRoleReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha2.KeycloakRealm{}).
+		For(&v1alpha2.KeycloakRealmRole{}).
 		Complete(r)
 }
