@@ -111,12 +111,10 @@ func (r *KeycloakClientReconciler) syncClient(ctx context.Context, gc *gocloak.G
 		// Deleted
 		return api.Deleted()
 	}
-
 	// Adding finalizer
 	if err := r.AppendFinalizer(ctx, i); err != nil {
 		return api.Error("Finalizer", "failed to append finalizer", err)
 	}
-
 	if notFound {
 		return api.Waiting(serr.Message)
 	}

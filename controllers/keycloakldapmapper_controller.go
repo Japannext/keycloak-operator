@@ -94,11 +94,10 @@ func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *g
 		return api.Error("Fetch", "failed to fetch component", err)
 	}
 	id := utils.Unwrap(component.ID)
-	i.Status.ComponentID = id
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
-		if notFound {
+		if notFound || id != "" {
 			return api.AlreadyDeleted()
 		}
 		// Deleting...
@@ -139,7 +138,6 @@ func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *g
 			return err
 		}
 		// Created
-		i.Status.ComponentID = id
 		return api.Created()
 	}
 	// Update ID

@@ -76,7 +76,7 @@ func (r *KeycloakLDAPFederationReconciler) syncComponent(ctx context.Context, gc
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
-		if notFound {
+		if notFound || id == "" {
 			return api.AlreadyDeleted()
 		}
 		// Deleting...

@@ -55,7 +55,6 @@ func (api *ApiHelper) AlreadyDeleted() error {
 func (api *ApiHelper) NoChange() error {
 	status := api.Object.ApiStatus()
 	if status.Phase != v1alpha2.SYNCED {
-		log.FromContext(api.Context).V(2).Info(fmt.Sprintf("Patch: %v", makePatch(v1alpha2.SYNCED)))
 		if err := api.Status().Patch(api.Context, api.Object, makePatch(v1alpha2.SYNCED)); err != nil {
 			return fmt.Errorf("failed to patch resource status (no-change): %w", err)
 		}
@@ -69,7 +68,7 @@ func (api *ApiHelper) Waiting(text string) error {
 	api.Event(api.Object, "Normal", "Waiting", msg)
 	status := api.Object.ApiStatus()
 	if status.Phase != v1alpha2.WAITING {
-		if err := api.Status().Patch(api.Context, api.Object, makePatch(v1alpha2.SYNCED)); err != nil {
+		if err := api.Status().Patch(api.Context, api.Object, makePatch(v1alpha2.WAITING)); err != nil {
 			return fmt.Errorf("failed to patch resource status (waiting): %w", err)
 		}
 	}

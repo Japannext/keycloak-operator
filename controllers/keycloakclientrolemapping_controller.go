@@ -141,9 +141,13 @@ func (r *KeycloakClientRoleMappingReconciler) syncClientRoleMapping(ctx context.
 	if utils.IgnoreNotFound(err) != nil {
 		return api.Error("FetchSubjectRoles", "failed to fetch subject roles", err)
 	}
+  exist := roleExists(roles, utils.Unwrap(role.Name))
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
+    if notFound || !exist {
+      return api.AlreadyDeleted()
+    }
 		// Deleting...
 		err := utils.DeleteRoleFromSubject(ctx, gc, token, realm, idOfClient, sid, subject, *role)
 		if _, notFound := utils.IsNotFound(err); notFound {
@@ -163,7 +167,7 @@ func (r *KeycloakClientRoleMappingReconciler) syncClientRoleMapping(ctx context.
 	}
 
 	// Creation
-	if !roleExists(roles, *role.Name) {
+	if !exist {
 		// Creating...
 		if err := utils.AddRoleToSubject(ctx, gc, token, realm, idOfClient, sid, subject, *role); err != nil {
 			return api.Error("Create", "failed to create resource", err)
