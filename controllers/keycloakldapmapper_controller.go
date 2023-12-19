@@ -53,71 +53,81 @@ func (r *KeycloakLDAPMapperReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Sync client
-	if err := r.syncLdapMapper(ctx, gc, token, i); err != nil {
+	ldap, err := r.syncLdapMapper(ctx, gc, token, i)
+	if err != nil {
 		return utils.HandleError(err)
+	}
+
+	if ldap.Changed {
+		if err := r.SyncLDAP(ctx, gc, token, i, ldap); err != nil {
+			return utils.HandleError(err)
+		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakLDAPMapper) error {
+func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakLDAPMapper) (utils.LDAPSync, error) {
 	realm := i.Spec.Realm
 	api := r.Api(ctx, i)
+	ldap := utils.LDAPSync{}
+	ldap.Realm = realm
 
 	// Fetch Federation
 	fed, err := gc.FindComponent(ctx, token, realm, v1alpha2.USER_STORAGE_PROVIDER, "ldap", i.Spec.Federation, "")
 	serr, notFound := utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
-		return api.Error("Fetch", "failed to fetch federation", err)
+		return ldap, api.Error("Fetch", "failed to fetch federation", err)
 	}
 	fid := utils.Unwrap(fed.ID)
+	ldap.FederationID = fid
 	// Pre-delete edge case
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) && (notFound || fid == "") {
-		return api.AlreadyDeleted()
+		return ldap, api.AlreadyDeleted()
 	}
 	// Pending
 	if notFound {
-		return api.Waiting(serr.Message)
+		return ldap, api.Waiting(serr.Message)
 	}
 	if fid == "" {
-		return api.Waiting("ldap federation not found")
+		return ldap, api.Waiting("ldap federation not found")
 	}
 	// Update ID
 	if err := r.CustomPatch(ctx, i, "federationID", fid, i.Status.FederationID); err != nil {
-		return err
+		return ldap, err
 	}
 
 	// Fetch
 	component, err := gc.FindComponent(ctx, token, realm, v1alpha2.LDAP_STORAGE_MAPPER, i.Spec.Type, i.Spec.Name, fid)
 	serr, notFound = utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
-		return api.Error("Fetch", "failed to fetch component", err)
+		return ldap, api.Error("Fetch", "failed to fetch component", err)
 	}
 	id := utils.Unwrap(component.ID)
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
 		if notFound || id != "" {
-			return api.AlreadyDeleted()
+			return ldap, api.AlreadyDeleted()
 		}
 		// Deleting...
 		err := gc.DeleteComponent(ctx, token, realm, id)
 		if _, notFound := utils.IsNotFound(err); notFound {
-			return api.AlreadyDeleted()
+			return ldap, api.AlreadyDeleted()
 		}
 		if err != nil {
-			return api.Error("Delete", "failed to delete resource", err)
+			return ldap, api.Error("Delete", "failed to delete resource", err)
 		}
 		// Deleted
-		return api.Deleted()
+		return ldap, api.Deleted()
 	}
 	// Adding finalizer
 	if err := r.AppendFinalizer(ctx, i); err != nil {
-		return api.Error("Finalizer", "failed to append finalizer", err)
+		return ldap, api.Error("Finalizer", "failed to append finalizer", err)
 	}
 	// Pending
 	if notFound {
-		return api.Waiting(serr.Message)
+		return ldap, api.Waiting(serr.Message)
 	}
 
 	// Creation
@@ -125,30 +135,28 @@ func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *g
 		// Creating...
 		newComponent, err := i.ToComponent(fid)
 		if err != nil {
-			return api.Error("Create", "failed to create resource", err)
+			return ldap, api.Error("Create", "failed to create resource", err)
 		}
 		id, err := gc.CreateComponent(ctx, token, realm, *newComponent)
 		if err != nil {
-			return api.Error("Create", "failed to create resource", err)
+			return ldap, api.Error("Create", "failed to create resource", err)
 		}
+		ldap.Changed = true
 		if err := r.CustomPatch(ctx, i, "componentID", id, ""); err != nil {
-			return err
-		}
-		if err := api.SyncLDAP(gc, token, realm, id); err != nil {
-			return err
+			return ldap, err
 		}
 		// Created
-		return api.Created()
+		return ldap, api.Created()
 	}
 	// Update ID
 	if err := r.CustomPatch(ctx, i, "componentID", id, i.Status.ComponentID); err != nil {
-		return err
+		return ldap, err
 	}
 
 	// Update
 	updatedComponent, err := i.ToComponent(fid)
 	if err != nil {
-		return api.Error("Update", "failed to update resource", err)
+		return ldap, api.Error("Update", "failed to update resource", err)
 	}
 	changelog := v1alpha2.DiffComponentConfigs(updatedComponent.ComponentConfig, component.ComponentConfig)
 	if len(changelog) > 0 {
@@ -156,17 +164,15 @@ func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *g
 		api.EventUpdate(changelog)
 		updatedComponent.ID = &id
 		if err := gc.UpdateComponent(ctx, token, realm, *updatedComponent); err != nil {
-			return api.Error("Update", "failed to update resource", err)
+			return ldap, api.Error("Update", "failed to update resource", err)
 		}
-		if err := api.SyncLDAP(gc, token, realm, id); err != nil {
-			return err
-		}
+		ldap.Changed = true
 		// Updated
-		return api.Updated()
+		return ldap, api.Updated()
 	}
 
 	// No change
-	return api.NoChange()
+	return ldap, api.NoChange()
 }
 
 // SetupWithManager sets up the controller with the Manager.

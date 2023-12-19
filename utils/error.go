@@ -13,22 +13,24 @@ import (
 type Reschedule struct {
 	RequeueAfter time.Duration
 }
+
 func (r Reschedule) Error() string {
-  return "Reschedule"
+	return "Reschedule"
 }
 func (r Reschedule) Is(err error) bool {
-  _, ok := err.(*Reschedule)
-  return ok
+	_, ok := err.(*Reschedule)
+	return ok
 }
 
 // A wrapper for errors that should not retrigger the reconciler.
 type NoReschedule struct{}
+
 func (nr NoReschedule) Error() string {
 	return "no-reschedule"
 }
 func (nr NoReschedule) Is(err error) bool {
-  _, ok := err.(*NoReschedule)
-  return ok
+	_, ok := err.(*NoReschedule)
+	return ok
 }
 
 func HandleError(err error) (ctrl.Result, error) {

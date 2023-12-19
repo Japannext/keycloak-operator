@@ -54,49 +54,63 @@ func (r *KeycloakLDAPFederationReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	// Sync client
-	if err := r.syncComponent(ctx, gc, token, i); err != nil {
+	ldap, err := r.syncComponent(ctx, gc, token, i)
+	if err != nil {
 		return utils.HandleError(err)
+	}
+
+	if ldap.Changed {
+		if err := r.SyncLDAP(ctx, gc, token, i, ldap); err != nil {
+			return utils.HandleError(err)
+		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *KeycloakLDAPFederationReconciler) syncComponent(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakLDAPFederation) error {
+func (r *KeycloakLDAPFederationReconciler) syncComponent(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakLDAPFederation) (utils.LDAPSync, error) {
 	realm := i.Spec.Realm
 	ns := i.GetNamespace()
 	api := r.Api(ctx, i)
+	ldap := utils.LDAPSync{Realm: realm}
 
 	// Fetch
 	component, err := gc.FindComponent(ctx, token, realm, v1alpha2.LDAP_STORAGE_MAPPER, "ldap", i.Spec.Config.Name, "")
 	serr, notFound := utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
-		return api.Error("Fetch", "failed to fetch component", err)
+		return ldap, api.Error("Fetch", "failed to fetch component", err)
 	}
 	id := utils.Unwrap(component.ID)
+	ldap.FederationID = id
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
 		if notFound || id == "" {
-			return api.AlreadyDeleted()
+			return ldap, api.AlreadyDeleted()
 		}
 		// Deleting...
 		err := gc.DeleteComponent(ctx, token, realm, id)
 		if _, notFound := utils.IsNotFound(err); notFound {
-			return api.AlreadyDeleted()
+			return ldap, api.AlreadyDeleted()
 		}
 		if err != nil {
-			return api.Error("Delete", "failed to delete resource", err)
+			return ldap, api.Error("Delete", "failed to delete resource", err)
 		}
 		// Deleted
-		return api.Deleted()
+		return ldap, api.Deleted()
 	}
 	// Adding finalizer
 	if err := r.AppendFinalizer(ctx, i); err != nil {
-		return api.Error("Finalizer", "failed to append finalizer", err)
+		return ldap, api.Error("Finalizer", "failed to append finalizer", err)
 	}
 	// Pending
 	if notFound {
-		return api.Waiting(serr.Message)
+		return ldap, api.Waiting(serr.Message)
+	}
+
+	// Update ID
+	if err := r.CustomPatch(ctx, i, "componentID", id, i.Status.ComponentID); err != nil {
+		return ldap, err
 	}
 
 	// Creation
@@ -104,31 +118,24 @@ func (r *KeycloakLDAPFederationReconciler) syncComponent(ctx context.Context, gc
 		// Creating...
 		newComponent, err := i.Spec.Config.ToComponent(ctx, r.Client, ns)
 		if err != nil {
-			return api.Error("Create", "failed to convert spec to component", err)
+			return ldap, api.Error("Create", "failed to convert spec to component", err)
 		}
 		id, err := gc.CreateComponent(ctx, token, realm, *newComponent)
 		if err != nil {
-			return api.Error("Create", "failed to create resource", err)
+			return ldap, api.Error("Create", "failed to create resource", err)
 		}
-		if err := r.CustomPatch(ctx, i, "componentID", id, ""); err != nil {
-			return err
+		ldap.Changed = true
+		ldap.FederationID = id
+		if err := r.CustomPatch(ctx, i, "componentID", id, i.Status.ComponentID); err != nil {
+			return ldap, err
 		}
-		if err := api.SyncLDAP(gc, token, realm, id); err != nil {
-			return err
-		}
-		// Created
-		return api.Created()
-	}
-
-	// Update ID
-	if err := r.CustomPatch(ctx, i, "componentID", id, i.Status.ComponentID); err != nil {
-		return err
+		return ldap, api.Created()
 	}
 
 	// Update
 	updatedComponent, err := i.Spec.Config.ToComponent(ctx, r.Client, ns)
 	if err != nil {
-		return api.Error("Update", "failed to convert spec to component", err)
+		return ldap, api.Error("Update", "failed to convert spec to component", err)
 	}
 	changelog := v1alpha2.DiffComponentConfigs(updatedComponent.ComponentConfig, component.ComponentConfig)
 	if len(changelog) > 0 {
@@ -136,17 +143,15 @@ func (r *KeycloakLDAPFederationReconciler) syncComponent(ctx context.Context, gc
 		api.EventUpdate(changelog)
 		updatedComponent.ID = &id
 		if err := gc.UpdateComponent(ctx, token, realm, *updatedComponent); err != nil {
-			return api.Error("Update", "failed to update resource", err)
+			return ldap, api.Error("Update", "failed to update resource", err)
 		}
-		if err := api.SyncLDAP(gc, token, realm, id); err != nil {
-			return err
-		}
+		ldap.Changed = true
 		// Updated
-		return api.Updated()
+		return ldap, api.Updated()
 	}
 
 	// No change
-	return api.NoChange()
+	return ldap, api.NoChange()
 }
 
 // SetupWithManager sets up the controller with the Manager.
