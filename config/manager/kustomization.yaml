@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: nexus.dc.japannext.co.jp:8442/unix/kubernetes/keycloak-operator
-  newTag: 1.0.0
+  newTag: 1.1.1

@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.0.0
+VERSION ?= 1.1.1
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -274,4 +274,7 @@ develop: helm
 
 .PHONY: release
 release: helm
-	source .env && docker build -t $(NEXUS_IMG) .
+	docker build . -t ${LOCAL_REPO}/keycloak-operator:$(VERSION)
+	docker push ${LOCAL_REPO}/keycloak-operator:$(VERSION)
+	helm package ./charts/keycloak-operator
+	helm cm-push ./keycloak-operator-$(VERSION).tgz jnx-repo-upload

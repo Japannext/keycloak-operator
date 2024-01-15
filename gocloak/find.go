@@ -35,10 +35,10 @@ func (gc *GoCloak) FetchClientSecret(ctx context.Context, token, realm, idOfClie
 	if err != nil {
 		return "", err
 	}
-	if creds.SecretData == nil {
+	if creds.Value == nil {
 		return "", nil
 	}
-	return *creds.SecretData, nil
+	return *creds.Value, nil
 }
 
 func (gc *GoCloak) FindComponent(ctx context.Context, token, realm, providerType, providerId, name, parentId string) (*Component, error) {
