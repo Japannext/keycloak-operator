@@ -91,12 +91,17 @@ func (r *KeycloakClientProtocolMapperReconciler) syncClientProtocolMapper(ctx co
 
 	// Fetch
 	var protocolMapper *gocloak.ProtocolMapper
-	for _, pm := range *c.ProtocolMappers {
-		if utils.Unwrap(pm.Name) == utils.Unwrap(i.Spec.Config.Name) {
-			protocolMapper = &pm
+	if c.ProtocolMappers != nil {
+		for _, pm := range *c.ProtocolMappers {
+			if utils.Unwrap(pm.Name) == utils.Unwrap(i.Spec.Config.Name) {
+				protocolMapper = &pm
+			}
 		}
 	}
-	id := utils.Unwrap(protocolMapper.ID)
+	id := ""
+	if protocolMapper != nil {
+		id = utils.Unwrap(protocolMapper.ID)
+	}
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
