@@ -324,6 +324,12 @@ spec:
                     default: false
                     type: boolean
                   defaultClientScopes:
+                    default:
+                    - acr
+                    - email
+                    - profile
+                    - roles
+                    - web-origins
                     items:
                       type: string
                     type: array

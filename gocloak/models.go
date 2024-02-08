@@ -488,7 +488,7 @@ type Client struct {
 	ClientID *string `json:"clientId,omitempty" diff:"clientId"`
 	// +kubebuilder:default=false
 	ConsentRequired *bool `json:"consentRequired,omitempty" diff:"consentRequired"`
-	// +optional
+	// +kubebuilder:default={"acr", "email", "profile", "roles", "web-origins"}
 	DefaultClientScopes *[]string `json:"defaultClientScopes,omitempty" diff:"defaultClientScopes"`
 	// +kubebuilder:default=""
 	Description *string `json:"description,omitempty" diff:"description"`
