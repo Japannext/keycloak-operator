@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# This script is calling `task` (from taskfile), and downloads/runs it if
+# it's not in the PATH
+
+BASEDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+if which task >/dev/null 2>&1; then
+  task "${@}"
+elif [[ -x "${BASEDIR}/bin/task" ]]; then
+  "${BASEDIR}/bin/task" "${@}"
+else
+  (>&2 echo "Installing task binary...")
+  tmpdir="$(mktemp -d -t 'taskdownload.XXXX')"
+  wget -q https://github.com/go-task/task/releases/download/v3.34.1/task_linux_amd64.tar.gz -O "${tmpdir}/task.tar.gz" || exit 1
+  tar -C "${tmpdir}" -xf "${tmpdir}/task.tar.gz" || exit 1
+  mv "${tmpdir}/task" "${BASEDIR}/bin/task" || exit 1
+
+  # Running task
+  "${BASEDIR}/bin/task" "${@}"
+fi

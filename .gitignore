@@ -26,6 +26,6 @@ Dockerfile.cross
 *~
 
 .ca-bundle/*
-.scripts
-.manifests/*.yaml
-.helmfile.yaml
+.env
+.charts
+.task

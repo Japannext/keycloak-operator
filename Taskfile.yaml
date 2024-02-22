@@ -1,0 +1,115 @@
+---
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  name: keycloak-operator
+  version: 1.1.3
+
+  oci: ghcr.io/japannext
+  helm_oci: ghcr.io/japannext/helm-charts
+
+  controllergen_version: v0.13.0
+  kustomize_version: v3.8.7
+  helmify_version: v0.4.11
+
+  chart_version:
+    sh: "grep -oP '^version: \\K.*' charts/keycloak-operator/Chart.yaml"
+
+tasks:
+  # Build dependencies
+  download:helmify:
+    cmds:
+    - go install github.com/arttor/helmify/cmd/helmify@{{ .helmify_version }}
+    env:
+      GOBIN: "{{ .USER_WORKING_DIR }}/bin"
+    status:
+    - test -x bin/helmify
+  download:controllergen:
+    cmds:
+    - go install sigs.k8s.io/controller-tools/cmd/controller-gen@{{ .controllergen_version }}
+    env:
+      GOBIN: "{{ .USER_WORKING_DIR }}/bin"
+    status:
+    - test -x bin/controller-gen
+  download:kustomize:
+    cmds:
+    - wget https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F{{ .kustomize_version }}/kustomize_{{ .kustomize_version }}_linux_amd64.tar.gz
+    - tar -xvf kustomize_{{ .kustomize_version }}_linux_amd64.tar.gz
+    - mv ./kustomize ./bin/kustomize
+    - rm kustomize_{{ .kustomize_version }}_linux_amd64.tar.gz
+    status:
+    - test -x bin/kustomize
+  # Golang related
+  go:fmt: go fmt ./...
+  go:vet: go vet ./...
+  go:build:
+    desc: Build the golang binary
+    deps: ['generate', 'go:fmt', 'go:vet']
+    cmds:
+    - go build -o bin/manager main.go
+  generate:
+    deps: ['download:controllergen']
+    cmds:
+    - bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+  # Docker image
+  docker:build:
+    desc: Verify the docker image builds
+    deps: ['generate', 'go:fmt', 'go:vet']
+    cmds:
+    - docker build .
+  docker:develop:
+    desc: Upload dev docker image to local repo
+    deps: ['generate', 'go:fmt', 'go:vet']
+    cmds:
+    - docker build . -t $LOCAL_REPO/{{ .name }}:develop
+    - docker push $LOCAL_REPO/{{ .name }}:develop
+    preconditions:
+    - sh: test "$LOCAL_REPO" != ""
+      msg: "LOCAL_REPO needs to be set"
+  docker:release:
+    desc: Release the docker image to {{ .oci }}
+    deps: ['generate', 'go:fmt', 'go:vet']
+    cmds:
+    - docker build . -t {{ .oci }}/{{ .name }}:{{ .version }}
+    - docker push {{ .oci }}/{{ .name }}:{{ .version }}
+  # Kubernetes manifests
+  manifests:
+    deps: ['download:controllergen']
+    cmds:
+    - bin/controller-gen rbac:roleName=manager-role crd webhook paths="./..."
+      output:crd:artifacts:config=config/crd/bases
+    generates:
+    - config/crd/bases/**
+  kustomize:
+    deps: ['download:kustomize', 'manifests']
+    cmds:
+    - bin/kustomize build config/crd -o .manifests.yaml
+    sources:
+    - config/**/*.yaml
+    generates:
+    - .manifests.yaml
+  # Helm chart
+  helmify:
+    deps: ['download:helmify', 'kustomize']
+    cmds:
+    - bin/helmify -f .manifests.yaml charts/{{ .name }}
+    sources:
+    - .manifests.yaml
+    generates:
+    - charts/**/*
+  chart:develop:
+    desc: Upload dev helm chart to local repo
+    deps: ['helmify']
+    cmds:
+    - helm package -d .charts/ charts/keycloak-operator --version 0.0.0-dev
+    - helm cm-push .charts/keycloak-operator-0.0.0-dev.tgz $LOCAL_HELM_CM
+    preconditions:
+    - sh: test "$LOCAL_HELM_CM" != ""
+      msg: "LOCAL_HELM_CM needs to be set"
+  chart:release:
+    desc: Release the helm chart to {{ .helm_oci }}
+    cmds:
+    - helm package -d .charts/ charts/keycloak-operator
+    - helm push .charts/keycloak-operator-{{ .chart_version }}.tgz oci://{{ .helm_oci }}

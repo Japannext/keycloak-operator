@@ -7,25 +7,29 @@ or use a version of golang from your system that matches the one indicated in `g
 
 Verify the operator builds:
 ```bash
-make build
+./task build
 ```
 
-Verify the helm chart builds:
 ```bash
-make helm
+./task docker:build
 ```
 
-Verify the docker image builds:
+If you want to maintain development version of the artifacts locally,
+you can set the following:
 ```bash
-docker build .
+LOCAL_REPO=nexus.example.com:8443/mydockerepo/example
+LOCAL_HELM_CM=example-cm
 ```
 
-Build the docker image, and upload it to a local repository
-for build purposes:
+Releasing the dev docker image to your local repo:
 ```bash
-make develop
+./task docker:develop
 ```
-> This command alone is enough during development iterations.
+
+Releasing the dev helm chart to your local repo:
+```bash
+./task chart:develop
+```
 
 ## Building behind corporate proxy
 
@@ -34,6 +38,7 @@ being built.
 ```bash
 https_proxy=http://proxy.example.com:8080
 http_proxy=http://proxy.example.com:8080
+no_proxy=example.com
 ```
 
 ## Building behind TLS termination proxy
@@ -42,18 +47,14 @@ To use a custom certificate authority during the docker build,
 simply drop your custom CA in pem format in the `.ca-bundle/`
 directory.
 
-```
-Make sure the in-project CA directory exists
-mkdir -p .ca-bundle/
-
+```bash
 # On Ubuntu
 cp /usr/local/share/ca-certificates/* .ca-bundle/
-
+```
+```bash
 # On RHEL
 cp /etc/pki/ca-trust/source/anchors/* .ca-bundle/
 ```
 
 It will be added to the docker intermediate build image to fetch
 dependencies, but not to the final image.
-
-
