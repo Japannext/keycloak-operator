@@ -31,8 +31,8 @@ controllerManager:
         drop:
         - ALL
     image:
-      repository: nexus.dc.japannext.co.jp:8442/unix/kubernetes/keycloak-operator
-      tag: 1.1.3
+      repository: ghcr.io/japannext/keycloak-operator
+      tag: ""
     imagePullPolicy: IfNotPresent
     resources:
       limits:
