@@ -26,6 +26,65 @@ Overall, we felt the need for a kubernetes-integrated solution.
 * A LDAP sync is automatically triggered when create/update a LDAP user federation or LDAP mapper
 * A rule system to complete the kubernetes RBAC rules when using a KeycloakClusterEndpoint
 
+## Installation/Setup
+
+```bash
+helm install keycloak-operator oci://ghcr.io/japannext/helm-charts/keycloak-operator --version 1.1.3
+```
+
+> You can install the operator in the namespace of your choice.
+
+Create an endpoint to an existing keycloak:
+```yaml
+---
+apiVersion: keycloak.japannext.co.jp/v1alpha2
+kind: KeycloakClusterEndpoint
+metadata:
+  name: keycloak
+spec:
+  baseUrl: https://keycloak.example.com
+  # The admin realm to use
+  realm: master
+  # Reference to secret containing the keycloak admin user/password
+  basicAuthSecret:
+    name: keycloak-admin
+    namespace: mgmt
+  # Reference to CA certificate
+  caConfigMap:
+    key: ca.crt
+    name: ca-bundle
+    namespace: mgmt
+```
+
+> You need to create a secret with `username` and `password` keys set
+> (e.g. a [basic authentication secret](https://kubernetes.io/docs/concepts/configuration/secret/#basic-authentication-secret)).
+> This should be the admin user/password, and it's usually used to access the `master` realm.
+
+Once created, you should see the following (if successful):
+```console
+> kubectl get kce
+NAME       VERSION   STATUS
+keycloak   19.0.3    Connected
+```
+
+You can then create a realm like so:
+```yaml
+---
+apiVersion: keycloak.japannext.co.jp/v1alpha2
+kind: KeycloakRealm
+metadata:
+  name: example
+  namespace: mgmt
+spec:
+  endpoint:
+    kind: KeycloakClusterRealm
+    name: keycloak
+  config:
+    name: example
+    display_name: Example CORP
+    enabled: true
+```
+
 ## User RBAC
 
 When using a KeycloakEndpoint, one must pass a secret containing the keycloak admin credentials.
@@ -95,3 +154,7 @@ spec:
 
 Naturally, to make it possible, access to the KeycloakClusterEndpoint resource need
 to be restricted to administrators only.
+
+# Contributing
+
+If you wish to help developing keycloak-operator, check [CONTRIBUTING.md](./CONTRIBUTING.md).
