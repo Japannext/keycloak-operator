@@ -29,7 +29,7 @@ Overall, we felt the need for a kubernetes-integrated solution.
 ## Installation/Setup
 
 ```bash
-helm install keycloak-operator oci://ghcr.io/japannext/helm-charts/keycloak-operator --version 1.1.3
+helm install keycloak-operator oci://ghcr.io/japannext/helm-charts/keycloak-operator --version 1.1.4
 ```
 
 > You can install the operator in the namespace of your choice.
