@@ -515,7 +515,7 @@ type Client struct {
 	Origin               *string   `json:"origin,omitempty" diff:"origin"`
 	// +kubebuilder:default="openid-connect"
 	Protocol        *string           `json:"protocol,omitempty" diff:"protocol"`
-	ProtocolMappers *[]ProtocolMapper `json:"protocolMappers,omitempty" diff:"protocolMappers"`
+	ProtocolMappers *[]ProtocolMapper `json:"protocolMappers,omitempty" diff:"-"`
 	// +kubebuilder:default=false
 	PublicClient *bool `json:"publicClient,omitempty" diff:"publicClient"`
 	// +optional
