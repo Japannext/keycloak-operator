@@ -48,7 +48,7 @@ type KeycloakClientReconciler struct {
 //+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclients,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclients/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclients/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch
 
 func (r *KeycloakClientReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	i := &v1alpha2.KeycloakClient{}
