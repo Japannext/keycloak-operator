@@ -29,3 +29,5 @@ Dockerfile.cross
 .env
 .charts
 .task
+
+.manifests.yaml

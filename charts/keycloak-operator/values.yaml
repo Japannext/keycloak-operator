@@ -32,7 +32,7 @@ controllerManager:
         - ALL
     image:
       repository: ghcr.io/japannext/keycloak-operator
-      tag: ""
+      tag:
     imagePullPolicy: IfNotPresent
     resources:
       limits:

@@ -5,6 +5,7 @@ dotenv: ['.env']
 
 vars:
   name: keycloak-operator
+  chart_version: 1.1.4
   version: 1.1.4
 
   oci: ghcr.io/japannext
@@ -12,10 +13,8 @@ vars:
 
   controllergen_version: v0.13.0
   kustomize_version: v3.8.7
-  helmify_version: v0.4.11
+  helmify_version: v0.4.13
 
-  chart_version:
-    sh: "grep -oP '^version: \\K.*' charts/keycloak-operator/Chart.yaml"
 
 tasks:
   # Build dependencies
@@ -85,7 +84,7 @@ tasks:
   kustomize:
     deps: ['download:kustomize', 'manifests']
     cmds:
-    - bin/kustomize build config/crd -o .manifests.yaml
+    - bin/kustomize build config/default -o .manifests.yaml
     sources:
     - config/**/*.yaml
     generates:
@@ -94,7 +93,8 @@ tasks:
   helmify:
     deps: ['download:helmify', 'kustomize']
     cmds:
-    - bin/helmify -f .manifests.yaml charts/{{ .name }}
+    - cat .manifests.yaml | bin/helmify charts/{{ .name }}
+    - "sed -i 's/tag: latest/tag:/' charts/keycloak-operator/values.yaml"
     sources:
     - .manifests.yaml
     generates:
@@ -103,7 +103,7 @@ tasks:
     desc: Upload dev helm chart to local repo
     deps: ['helmify']
     cmds:
-    - helm package -d .charts/ charts/keycloak-operator --version 0.0.0-dev
+    - helm package -d .charts/ charts/keycloak-operator --version 0.0.0-dev --app-version={{ .version }}
     - helm cm-push .charts/keycloak-operator-0.0.0-dev.tgz $LOCAL_HELM_CM
     preconditions:
     - sh: test "$LOCAL_HELM_CM" != ""
@@ -111,5 +111,5 @@ tasks:
   chart:release:
     desc: Release the helm chart to {{ .helm_oci }}
     cmds:
-    - helm package -d .charts/ charts/keycloak-operator
+    - helm package -d .charts/ charts/keycloak-operator --version {{ .chart_version }} --app-version {{ .version }}
     - helm push .charts/keycloak-operator-{{ .chart_version }}.tgz oci://{{ .helm_oci }}

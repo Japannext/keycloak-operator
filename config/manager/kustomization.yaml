@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/japannext/keycloak-operator
-  newTag: 1.1.3
+  newTag: ""
