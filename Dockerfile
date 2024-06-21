@@ -3,6 +3,8 @@ FROM golang:1.19 as builder
 ARG TARGETOS
 ARG TARGETARCH
 
+LABEL org.opencontainers.image.source https://github.com/japannext/keycloak-operator
+
 # Certificate Authority workaround to build in any corporate environment
 # without having to change the Dockerfile
 COPY ./.ca-bundle/ /usr/local/share/ca-certificates/
