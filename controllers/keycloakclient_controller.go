@@ -275,7 +275,7 @@ func diffSecret(i *v1alpha2.KeycloakClient, secret *corev1.Secret, clientSecret 
 	if realm != i.Spec.Realm {
 		changes = append(changes, diff.Change{Type: diff.UPDATE, Path: []string{"metadata", "annotations", "keycloak.japannext.co.jp/realm"}, From: realm, To: i.Spec.Realm})
 	}
-	secret.ObjectMeta.Annotations["keycloak.japannext.co.jp/realm"] = i.Spec.Realm
+	metav1.SetMetaDataAnnotation(&secret.ObjectMeta, "keycloak.japannext.co.jp/realm", i.Spec.Realm)
 
 	return changes
 }
