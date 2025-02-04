@@ -1372,6 +1372,11 @@ func (in *LdapFederation) DeepCopyInto(out *LdapFederation) {
 		*out = new(v1.Duration)
 		**out = **in
 	}
+	if in.ConnectionPooling != nil {
+		in, out := &in.ConnectionPooling, &out.ConnectionPooling
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ConnectionTimeout != nil {
 		in, out := &in.ConnectionTimeout, &out.ConnectionTimeout
 		*out = new(v1.Duration)

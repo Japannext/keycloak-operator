@@ -91,7 +91,7 @@ type LdapFederation struct {
 	ChangedSyncPeriod *metav1.Duration `json:"changedSyncPeriod,omitempty"`
 	// Determines if Keycloak should use connection pooling for accessing LDAP server.
 	// +kubebuilder:default=false
-	ConnectionPooling bool `json:"connectionPooling"`
+	ConnectionPooling *bool `json:"connectionPooling"`
 	// Connection URL to your LDAP server
 	// +required
 	ConnectionUrl string `json:"connectionUrl"`
