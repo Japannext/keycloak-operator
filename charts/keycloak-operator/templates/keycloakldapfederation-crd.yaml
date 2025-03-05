@@ -93,6 +93,12 @@ spec:
                   connectionTimeout:
                     description: LDAP connection timeout in milliseconds
                     type: string
+                  connectionTrace:
+                    default: false
+                    description: |-
+                      If enabled, incoming and outgoing LDAP ASN.1 BER packets will be dumped to the error output stream.
+                      Be careful when enabling this option in production as it will expose all data sent to and from the LDAP server.
+                    type: boolean
                   connectionUrl:
                     description: Connection URL to your LDAP server
                     type: string

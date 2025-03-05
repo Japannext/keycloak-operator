@@ -92,9 +92,20 @@ spec:
                   connectionTimeout:
                     description: LDAP connection timeout in milliseconds
                     type: string
+                  connectionTrace:
+                    default: false
+                    description: |-
+                      If enabled, incoming and outgoing LDAP ASN.1 BER packets will be dumped to the error output stream.
+                      Be careful when enabling this option in production as it will expose all data sent to and from the LDAP server.
+                    type: boolean
                   connectionUrl:
                     description: Connection URL to your LDAP server
                     type: string
+                  debug:
+                    default: false
+                    description: Enable/disable debug logging to standard output for
+                      Krb5LoginModule.
+                    type: boolean
                   editMode:
                     default: READ_ONLY
                     description: READ_ONLY is a read-only LDAP store. WRITABLE means
@@ -143,6 +154,20 @@ spec:
                     description: If true, LDAP users will be imported into the Keycloak
                       DB and synced by the configured sync policies.
                     type: boolean
+                  kerberosRealm:
+                    description: Name of kerberos realm. For example, FOO.ORG.
+                    type: string
+                  keyTab:
+                    description: Location of Kerberos KeyTab file containing the credentials
+                      of server principal. For example, /etc/krb5.keytab
+                    type: string
+                  krbPrincipalAttribute:
+                    default: userPrincipalName
+                    description: |-
+                      Name of the LDAP attribute, which refers to Kerberos principal. This is used to lookup appropriate LDAP user after successful
+                      Kerberos/SPNEGO authentication in Keycloak. When this is empty, the LDAP user will be looked based on LDAP username corresponding
+                       to the first part of his Kerberos principal. For instance, for principal 'john@KEYCLOAK.ORG', it will assume that LDAP username is 'john'.
+                    type: string
                   maxLifespan:
                     default: 86400000
                     description: Max lifespan of cache entry in milliseconds (when
@@ -184,6 +209,10 @@ spec:
                     enum:
                     - "1"
                     - "2"
+                    type: string
+                  serverPrincipal:
+                    description: Full name of server principal for HTTP service including
+                      server and domain name. For example, HTTP/host.foo.org@FOO.ORG
                     type: string
                   startTls:
                     default: false
@@ -278,8 +307,10 @@ spec:
                 - batchSizeForSync
                 - connectionPooling
                 - connectionUrl
+                - debug
                 - enabled
                 - importEnabled
+                - krbPrincipalAttribute
                 - name
                 - pagination
                 - periodicChangedUsersSync
@@ -292,7 +323,9 @@ spec:
                 - usePasswordModifyExtendedOp
                 - useTruststoreSpi
                 - userObjectClasses
+                - usersDn
                 - validatePasswordPolicy
+                - vendor
                 type: object
               endpoint:
                 description: Select a KeycloakEndpoint

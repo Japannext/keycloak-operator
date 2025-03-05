@@ -91,7 +91,11 @@ type LdapFederation struct {
 	ChangedSyncPeriod *metav1.Duration `json:"changedSyncPeriod,omitempty"`
 	// Determines if Keycloak should use connection pooling for accessing LDAP server.
 	// +kubebuilder:default=false
-	ConnectionPooling *bool `json:"connectionPooling"`
+	ConnectionPooling bool `json:"connectionPooling"`
+	// If enabled, incoming and outgoing LDAP ASN.1 BER packets will be dumped to the error output stream.
+	// Be careful when enabling this option in production as it will expose all data sent to and from the LDAP server.
+	// +kubebuilder:default=false
+	ConnectionTrace bool `json:"connectionTrace,omitempty"`
 	// Connection URL to your LDAP server
 	// +required
 	ConnectionUrl string `json:"connectionUrl"`
@@ -144,6 +148,23 @@ type LdapFederation struct {
 	// LDAP server with Directory Service API
 	// +kubebuilder:default=false
 	UseKerberosForPasswordAuthentication bool `json:"useKerberosForPasswordAuthentication,omitempty"`
+	// Name of the LDAP attribute, which refers to Kerberos principal. This is used to lookup appropriate LDAP user after successful
+	// Kerberos/SPNEGO authentication in Keycloak. When this is empty, the LDAP user will be looked based on LDAP username corresponding
+	//  to the first part of his Kerberos principal. For instance, for principal 'john@KEYCLOAK.ORG', it will assume that LDAP username is 'john'.
+	// +kubebuilder:default=userPrincipalName
+	KrbPrincipalAttribute string `json:"krbPrincipalAttribute"`
+	// Name of kerberos realm. For example, FOO.ORG.
+	// +optional
+	KerberosRealm string `json:"kerberosRealm,omitempty"`
+	// Full name of server principal for HTTP service including server and domain name. For example, HTTP/host.foo.org@FOO.ORG
+	// +optional
+	ServerPrincipal string `json:"serverPrincipal,omitempty"`
+	// Location of Kerberos KeyTab file containing the credentials of server principal. For example, /etc/krb5.keytab
+	// +optional
+	KeyTab string `json:"keyTab"`
+	// Enable/disable debug logging to standard output for Krb5LoginModule.
+	// +kubebuilder:default=false
+	Debug bool `json:"debug"`
 	// Use the LDAPv3 Password Modify Extended Operation (RFC-3062). The password modify extended operation usually requires that
 	// LDAP user already has password in the LDAP server. So when this is used with 'Sync Registrations', it can be good to add
 	// also 'Hardcoded LDAP attribute mapper' with randomly generated initial password.
@@ -221,6 +242,10 @@ func (ldap *LdapFederation) ToComponent(ctx context.Context, c client.Client, ns
 		"uuidLDAPAttribute":                    {ldap.UuidLDAPAttribute},
 		"validatePasswordPolicy":               {strconv.FormatBool(ldap.ValidatePasswordPolicy)},
 		"vendor":                               {strings.ToLower(ldap.Vendor)},
+		"krbPrincipalAttribute":                {ldap.KrbPrincipalAttribute},
+		"debug":                                {strconv.FormatBool(ldap.Debug)},
+		"connectionPooling":                    {strconv.FormatBool(ldap.ConnectionPooling)},
+		"connectionTrace":                      {strconv.FormatBool(ldap.ConnectionTrace)},
 	}
 
 	// Authentication options
