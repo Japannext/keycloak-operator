@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Japannext.
+opyright 2023.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -28,17 +28,18 @@ import (
 	"github.com/japannext/keycloak-operator/utils"
 )
 
-// KeycloakClientRoleReconciler reconciles a KeycloakClientRole object
-type KeycloakClientRoleReconciler struct {
+// KeycloakClientScopeProtocolMapperReconciler reconciles a KeycloakClientScopeProtocolMapper object
+type KeycloakClientScopeProtocolMapperReconciler struct {
 	utils.BaseReconciler
 }
 
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientroles,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientroles/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientroles/finalizers,verbs=update
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientscopeprotocolmappers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientscopeprotocolmappers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientscopeprotocolmappers/finalizers,verbs=update
 
-func (r *KeycloakClientRoleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	i := &v1alpha2.KeycloakClientRole{}
+func (r *KeycloakClientScopeProtocolMapperReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
+	i := &v1alpha2.KeycloakClientScopeProtocolMapper{}
 
 	// Resource
 	if err := r.Client.Get(ctx, req.NamespacedName, i); err != nil {
@@ -55,56 +56,55 @@ func (r *KeycloakClientRoleReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Sync client
-	if err := r.syncClientRole(ctx, gc, token, i); err != nil {
+	if err := r.syncClientScopeProtocolMapper(ctx, gc, token, i); err != nil {
 		return utils.HandleError(err)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *KeycloakClientRoleReconciler) syncClientRole(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakClientRole) error {
+func (r *KeycloakClientScopeProtocolMapperReconciler) syncClientScopeProtocolMapper(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakClientScopeProtocolMapper) error {
 
 	realm := i.Spec.Realm
 	api := r.Api(ctx, i)
 
-	// Fetch Client
-	c, err := gc.FindClient(ctx, token, realm, i.Spec.Client)
+	scope, err := gc.FindClientScope(ctx, token, realm, i.Spec.ClientScope)
 	serr, notFound := utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
-		return api.Error("FetchClient", "failed to fetch resource", err)
+		return api.Error("Fetch", "failed to fetch resource", err)
 	}
-	idOfClient := utils.Unwrap(c.ID)
+	scopeID := utils.Unwrap(scope.ID)
 	// Pre-delete edge case
-	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) && (notFound || idOfClient == "") {
+	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) && (notFound || scopeID == "") {
 		return api.AlreadyDeleted()
 	}
 	// Pending
 	if notFound {
 		return api.Waiting(serr.Message)
 	}
-	if idOfClient == "" {
-		return api.Waiting("client not found")
+	if scopeID == "" {
+		return api.Waiting("client scope not found")
 	}
 	// Update ID
-	if err := r.CustomPatch(ctx, i, "clientID", idOfClient, i.Status.ClientID); err != nil {
+	if err := r.CustomPatch(ctx, i, "clientScopeID", scopeID, i.Status.ClientScopeID); err != nil {
 		return err
 	}
 
 	// Fetch
-	role, err := gc.FindClientRole(ctx, token, realm, idOfClient, *i.Spec.Config.Name)
+	pm, err := gc.FindClientScopeProtocolMapper(ctx, token, realm, scopeID, *i.Spec.Config.Name)
 	serr, notFound = utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
 		return api.Error("Fetch", "failed to fetch resource", err)
 	}
-	rid := utils.Unwrap(role.ID)
+	id := utils.Unwrap(pm.ID)
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
-		if notFound || rid == "" {
+		if notFound || id == "" {
 			return api.AlreadyDeleted()
 		}
 		// Deleting...
-		err := gc.DeleteClientRole(ctx, token, realm, idOfClient, rid)
+		err := gc.DeleteClientScopeProtocolMapper(ctx, token, realm, scopeID, id)
 		if _, notFound := utils.IsNotFound(err); notFound {
 			return api.AlreadyDeleted()
 		}
@@ -123,33 +123,31 @@ func (r *KeycloakClientRoleReconciler) syncClientRole(ctx context.Context, gc *g
 		return api.Waiting(serr.Message)
 	}
 
-	// Creation
-	if rid == "" {
-		newRole := i.Spec.Config
-		rid, err := gc.CreateClientRole(ctx, token, realm, idOfClient, newRole)
+	if id == "" {
+		newProto := i.Spec.Config
+		id, err := gc.CreateClientScopeProtocolMapper(ctx, token, realm, scopeID, newProto)
 		if err != nil {
 			return api.Error("Create", "failed to create resource", err)
 		}
-		if err := r.CustomPatch(ctx, i, "roleID", rid, ""); err != nil {
+		if err := r.CustomPatch(ctx, i, "protocolMapperID", id, i.Status.ProtocolMapperID); err != nil {
 			return err
 		}
 		return api.Created()
 	}
-
 	// Update ID
-	if err := r.CustomPatch(ctx, i, "roleID", rid, i.Status.RoleID); err != nil {
+	if err := r.CustomPatch(ctx, i, "protocolMapperID", id, i.Status.ProtocolMapperID); err != nil {
 		return err
 	}
 
 	// Update
-	changelog, err := diff.Diff(i.Spec.Config, *role)
+	changelog, err := diff.Diff(i.Spec.Config, *pm)
 	if err != nil {
 		return api.Error("Update", "failed during diff", err)
 	}
 	if len(changelog) > 0 {
 		api.EventUpdate(changelog)
-		updatedRole := i.Spec.Config
-		if err := gc.UpdateRole(ctx, token, realm, idOfClient, updatedRole); err != nil {
+		updatedProto := i.Spec.Config
+		if err := gc.UpdateClientScopeProtocolMapper(ctx, token, realm, scopeID, updatedProto); err != nil {
 			return api.Error("Update", "failed to update resource", err)
 		}
 		return api.Updated()
@@ -159,8 +157,8 @@ func (r *KeycloakClientRoleReconciler) syncClientRole(ctx context.Context, gc *g
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *KeycloakClientRoleReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *KeycloakClientScopeProtocolMapperReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha2.KeycloakClientRole{}).
+		For(&v1alpha2.KeycloakClientScopeProtocolMapper{}).
 		Complete(r)
 }

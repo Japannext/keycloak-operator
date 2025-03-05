@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	keycloakv1alpha2 "github.com/japannext/keycloak-operator/api/v1alpha2"
-	"github.com/japannext/keycloak-operator/controllers"
+	"github.com/japannext/keycloak-operator/internal/controller"
 	"github.com/japannext/keycloak-operator/utils"
 	//+kubebuilder:scaffold:imports
 )
@@ -90,19 +90,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.KeycloakEndpointReconciler{
+	if err = (&controller.KeycloakEndpointReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakEndpoint")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakClusterEndpointReconciler{
+	if err = (&controller.KeycloakClusterEndpointReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakClusterEndpoint")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakRealmReconciler{
+	if err = (&controller.KeycloakRealmReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakRealm")
@@ -112,7 +112,7 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "KeycloakRealm")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakClientReconciler{
+	if err = (&controller.KeycloakClientReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakClient")
@@ -122,7 +122,7 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "KeycloakClient")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakClientRoleReconciler{
+	if err = (&controller.KeycloakClientRoleReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakClientRole")
@@ -132,14 +132,14 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "KeycloakClientRole")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakClientRoleMappingReconciler{
+	if err = (&controller.KeycloakClientRoleMappingReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakClientRoleMapping")
 		os.Exit(1)
 	}
 
-	if err = (&controllers.KeycloakLDAPFederationReconciler{
+	if err = (&controller.KeycloakLDAPFederationReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakLDAPFederation")
@@ -149,31 +149,31 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "KeycloakLDAPFederation")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakLDAPMapperReconciler{
+	if err = (&controller.KeycloakLDAPMapperReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakLDAPMapper")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakClientScopeReconciler{
+	if err = (&controller.KeycloakClientScopeReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakClientScope")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakClientScopeProtocolMapperReconciler{
+	if err = (&controller.KeycloakClientScopeProtocolMapperReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakClientScopeProtocolMapper")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakClientProtocolMapperReconciler{
+	if err = (&controller.KeycloakClientProtocolMapperReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakClientProtocolMapper")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeycloakRealmRoleReconciler{
+	if err = (&controller.KeycloakRealmRoleReconciler{
 		BaseReconciler: utils.NewReconciler(mgr),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KeycloakRealmRole")

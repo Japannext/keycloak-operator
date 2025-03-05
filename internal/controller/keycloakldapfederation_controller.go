@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -26,17 +26,18 @@ import (
 	"github.com/japannext/keycloak-operator/utils"
 )
 
-// KeycloakLDAPMapperReconciler reconciles a KeycloakLDAPMapper object
-type KeycloakLDAPMapperReconciler struct {
+// KeycloakLDAPFederationReconciler reconciles a KeycloakLDAPFederation object
+type KeycloakLDAPFederationReconciler struct {
 	utils.BaseReconciler
 }
 
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakldapmappers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakldapmappers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakldapmappers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakldapfederations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakldapfederations/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakldapfederations/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update
 
-func (r *KeycloakLDAPMapperReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	i := &v1alpha2.KeycloakLDAPMapper{}
+func (r *KeycloakLDAPFederationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	i := &v1alpha2.KeycloakLDAPFederation{}
 
 	// Resource
 	if err := r.Client.Get(ctx, req.NamespacedName, i); err != nil {
@@ -53,7 +54,7 @@ func (r *KeycloakLDAPMapperReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	// Sync client
-	ldap, err := r.syncLdapMapper(ctx, gc, token, i)
+	ldap, err := r.syncComponent(ctx, gc, token, i)
 	if err != nil {
 		return utils.HandleError(err)
 	}
@@ -67,47 +68,24 @@ func (r *KeycloakLDAPMapperReconciler) Reconcile(ctx context.Context, req ctrl.R
 	return ctrl.Result{}, nil
 }
 
-func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakLDAPMapper) (utils.LDAPSync, error) {
+func (r *KeycloakLDAPFederationReconciler) syncComponent(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakLDAPFederation) (utils.LDAPSync, error) {
 	realm := i.Spec.Realm
+	ns := i.GetNamespace()
 	api := r.Api(ctx, i)
-	ldap := utils.LDAPSync{}
-	ldap.Realm = realm
-
-	// Fetch Federation
-	fed, err := gc.FindComponent(ctx, token, realm, v1alpha2.USER_STORAGE_PROVIDER, "ldap", i.Spec.Federation, "")
-	serr, notFound := utils.IsNotFound(err)
-	if utils.IgnoreNotFound(err) != nil {
-		return ldap, api.Error("Fetch", "failed to fetch federation", err)
-	}
-	fid := utils.Unwrap(fed.ID)
-	ldap.FederationID = fid
-	// Pre-delete edge case
-	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) && (notFound || fid == "") {
-		return ldap, api.AlreadyDeleted()
-	}
-	// Pending
-	if notFound {
-		return ldap, api.Waiting(serr.Message)
-	}
-	if fid == "" {
-		return ldap, api.Waiting("ldap federation not found")
-	}
-	// Update ID
-	if err := r.CustomPatch(ctx, i, "federationID", fid, i.Status.FederationID); err != nil {
-		return ldap, err
-	}
+	ldap := utils.LDAPSync{Realm: realm}
 
 	// Fetch
-	component, err := gc.FindComponent(ctx, token, realm, v1alpha2.LDAP_STORAGE_MAPPER, i.Spec.Type, i.Spec.Name, fid)
-	serr, notFound = utils.IsNotFound(err)
+	component, err := gc.FindComponent(ctx, token, realm, v1alpha2.LDAP_STORAGE_MAPPER, "ldap", i.Spec.Config.Name, "")
+	serr, notFound := utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
 		return ldap, api.Error("Fetch", "failed to fetch component", err)
 	}
 	id := utils.Unwrap(component.ID)
+	ldap.FederationID = id
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
-		if notFound || id != "" {
+		if notFound || id == "" {
 			return ldap, api.AlreadyDeleted()
 		}
 		// Deleting...
@@ -130,33 +108,34 @@ func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *g
 		return ldap, api.Waiting(serr.Message)
 	}
 
+	// Update ID
+	if err := r.CustomPatch(ctx, i, "componentID", id, i.Status.ComponentID); err != nil {
+		return ldap, err
+	}
+
 	// Creation
 	if id == "" {
 		// Creating...
-		newComponent, err := i.ToComponent(fid)
+		newComponent, err := i.Spec.Config.ToComponent(ctx, r.Client, ns)
 		if err != nil {
-			return ldap, api.Error("Create", "failed to create resource", err)
+			return ldap, api.Error("Create", "failed to convert spec to component", err)
 		}
 		id, err := gc.CreateComponent(ctx, token, realm, *newComponent)
 		if err != nil {
 			return ldap, api.Error("Create", "failed to create resource", err)
 		}
 		ldap.Changed = true
-		if err := r.CustomPatch(ctx, i, "componentID", id, ""); err != nil {
+		ldap.FederationID = id
+		if err := r.CustomPatch(ctx, i, "componentID", id, i.Status.ComponentID); err != nil {
 			return ldap, err
 		}
-		// Created
 		return ldap, api.Created()
-	}
-	// Update ID
-	if err := r.CustomPatch(ctx, i, "componentID", id, i.Status.ComponentID); err != nil {
-		return ldap, err
 	}
 
 	// Update
-	updatedComponent, err := i.ToComponent(fid)
+	updatedComponent, err := i.Spec.Config.ToComponent(ctx, r.Client, ns)
 	if err != nil {
-		return ldap, api.Error("Update", "failed to update resource", err)
+		return ldap, api.Error("Update", "failed to convert spec to component", err)
 	}
 	changelog := v1alpha2.DiffComponentConfigs(updatedComponent.ComponentConfig, component.ComponentConfig)
 	if len(changelog) > 0 {
@@ -176,8 +155,8 @@ func (r *KeycloakLDAPMapperReconciler) syncLdapMapper(ctx context.Context, gc *g
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *KeycloakLDAPMapperReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *KeycloakLDAPFederationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha2.KeycloakLDAPMapper{}).
+		For(&v1alpha2.KeycloakLDAPFederation{}).
 		Complete(r)
 }

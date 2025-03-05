@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -28,17 +28,18 @@ import (
 	"github.com/japannext/keycloak-operator/utils"
 )
 
-// KeycloakClientScopeReconciler reconciles a KeycloakClientScope object
-type KeycloakClientScopeReconciler struct {
+// KeycloakRealmReconciler reconciles a KeycloakRealm object
+type KeycloakRealmReconciler struct {
 	utils.BaseReconciler
 }
 
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientscopes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientscopes/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakclientscopes/finalizers,verbs=update
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealms,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealms/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=keycloak.japannext.co.jp,resources=keycloakrealms/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
-func (r *KeycloakClientScopeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	i := &v1alpha2.KeycloakClientScope{}
+func (r *KeycloakRealmReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	i := &v1alpha2.KeycloakRealm{}
 
 	// Resource
 	if err := r.Client.Get(ctx, req.NamespacedName, i); err != nil {
@@ -54,78 +55,81 @@ func (r *KeycloakClientScopeReconciler) Reconcile(ctx context.Context, req ctrl.
 		return utils.HandleError(err)
 	}
 
-	// Sync client
-	if err := r.syncClientScope(ctx, gc, token, i); err != nil {
+	// Sync realm
+	if err := r.syncRealm(ctx, gc, token, i); err != nil {
 		return utils.HandleError(err)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *KeycloakClientScopeReconciler) syncClientScope(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakClientScope) error {
+func (r *KeycloakRealmReconciler) syncRealm(ctx context.Context, gc *gocloak.GoCloak, token string, i *v1alpha2.KeycloakRealm) error {
 
-	realm := i.Spec.Realm
 	api := r.Api(ctx, i)
 
-	scope, err := gc.FindClientScope(ctx, token, realm, *i.Spec.Config.Name)
-	serr, notFound := utils.IsNotFound(err)
+	realmName := utils.Unwrap(i.Spec.Config.Realm)
+
+	// Fetch
+	realm, err := gc.GetRealm(ctx, token, realmName)
+	_, notFound := utils.IsNotFound(err)
 	if utils.IgnoreNotFound(err) != nil {
 		return api.Error("Fetch", "failed to fetch resource", err)
 	}
-	id := utils.Unwrap(scope.ID)
 
 	// Deletion
 	if utils.MarkedAsDeleted(i) && utils.HasFinalizer(i) {
-		if notFound || id == "" {
+		if notFound {
 			return api.AlreadyDeleted()
 		}
-		// Deleting...
-		err := gc.DeleteClientScope(ctx, token, realm, id)
+		// Deleting
+		err := gc.DeleteRealm(ctx, token, realmName)
 		if _, notFound := utils.IsNotFound(err); notFound {
 			return api.AlreadyDeleted()
 		}
 		if err != nil {
 			return api.Error("Delete", "failed to delete resource", err)
 		}
+		if err := r.RemoveFinalizer(ctx, i); err != nil {
+			return api.Error("Delete", "failed to remove finalizer", err)
+		}
 		// Deleted
 		return api.Deleted()
 	}
+
 	// Adding finalizer
 	if err := r.AppendFinalizer(ctx, i); err != nil {
 		return api.Error("Finalizer", "failed to append finalizer", err)
 	}
-	// Pending
-	if notFound {
-		return api.Waiting(serr.Message)
-	}
 
 	// Creation
-	if id == "" {
-		newScope := i.Spec.Config
-		id, err := gc.CreateClientScope(ctx, token, realm, newScope)
+	if notFound {
+		newRealm := i.Spec.Config
+		id, err := gc.CreateRealm(ctx, token, newRealm)
 		if err != nil {
 			return api.Error("Create", "failed to create resource", err)
 		}
-		if err := r.CustomPatch(ctx, i, "clientScopeID", id, ""); err != nil {
+		if err := r.CustomPatch(ctx, i, "realmId", id, ""); err != nil {
 			return err
 		}
 		return api.Created()
 	}
-	// Update ID
-	if err := r.CustomPatch(ctx, i, "clientScopeID", id, i.Status.ClientScopeID); err != nil {
+
+	// Update ID status
+	id := utils.Unwrap(realm.ID)
+	if err := r.CustomPatch(ctx, i, "realmId", id, i.Status.RealmID); err != nil {
 		return err
 	}
 
 	// Update
-	changelog, err := diff.Diff(i.Spec.Config, *scope)
+	changelog, err := diff.Diff(i.Spec.Config, *realm)
 	if err != nil {
-		return api.Error("Update", "failed during diff", err)
+		return api.Error("Update", "failed while doing diff", err)
 	}
 	if len(changelog) > 0 {
 		api.EventUpdate(changelog)
-		updatedScope := i.Spec.Config
-		updatedScope.ID = &id
-		if err := gc.UpdateClientScope(ctx, token, realm, updatedScope); err != nil {
+		updatedRealm := i.Spec.Config
+		updatedRealm.ID = realm.ID
+		if err := gc.UpdateRealm(ctx, token, updatedRealm); err != nil {
 			return api.Error("Update", "failed to update resource", err)
 		}
 		return api.Updated()
@@ -135,8 +139,8 @@ func (r *KeycloakClientScopeReconciler) syncClientScope(ctx context.Context, gc 
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *KeycloakClientScopeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *KeycloakRealmReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha2.KeycloakClientScope{}).
+		For(&v1alpha2.KeycloakRealm{}).
 		Complete(r)
 }

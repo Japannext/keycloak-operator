@@ -4,9 +4,9 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: japannext.co.jp
 layout:
-- go.kubebuilder.io/v3
+- go.kubebuilder.io/v4
 plugins:
-  manifests.sdk.operatorframework.io/v2: {}
+  helm.kubebuilder.io/v1-alpha: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: keycloak-operator
 repo: github.com/japannext/keycloak-operator

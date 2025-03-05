@@ -47,7 +47,7 @@ tasks:
     desc: Build the golang binary
     deps: ['generate', 'go:fmt', 'go:vet']
     cmds:
-    - go build -o bin/manager main.go
+    - go build -o bin/manager cmd/main.go
   generate:
     deps: ['download:controllergen']
     cmds:
