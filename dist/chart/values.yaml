@@ -3,8 +3,8 @@ controllerManager:
   replicas: 1
   container:
     image:
-      repository: controller
-      tag: latest
+      repository: ghcr.io/japannext/keycloak-operator
+      tag: ""
     args:
       - "--leader-elect"
       - "--metrics-bind-address=:8443"
@@ -12,7 +12,7 @@ controllerManager:
     resources:
       limits:
         cpu: 500m
-        memory: 128Mi
+        memory: 1Gi
       requests:
         cpu: 10m
         memory: 64Mi
