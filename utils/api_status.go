@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -73,7 +74,7 @@ func (api *ApiHelper) Waiting(text string) error {
 			return fmt.Errorf("failed to patch resource status (waiting): %w", err)
 		}
 	}
-	return RescheduleAfter(keycloakResourceMissingRetryInterval, fmt.Errorf(text))
+	return RescheduleAfter(keycloakResourceMissingRetryInterval, errors.New(text))
 }
 
 func (api *ApiHelper) Error(action, text string, err error) error {
