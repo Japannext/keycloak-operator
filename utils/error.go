@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -10,35 +11,52 @@ import (
 	"github.com/japannext/keycloak-operator/gocloak"
 )
 
-type Reschedule struct {
+type ReschedulableError struct {
 	RequeueAfter time.Duration
+	Err          error
 }
 
-func (r Reschedule) Error() string {
-	return "Reschedule"
+func (r ReschedulableError) Error() string {
+	return fmt.Sprintf("Rescheduling %s later: %s", r.RequeueAfter, r.Err.Error())
 }
-func (r Reschedule) Is(err error) bool {
-	_, ok := err.(*Reschedule)
+func (r ReschedulableError) Is(err error) bool {
+	_, ok := err.(*ReschedulableError)
 	return ok
+}
+func RescheduleAfter(requeueAfter time.Duration, err error) ReschedulableError {
+	return ReschedulableError{
+		RequeueAfter: requeueAfter,
+		Err:          err,
+	}
+}
+func Reschedule(err error) ReschedulableError {
+	return ReschedulableError{
+		Err: err,
+	}
 }
 
 // A wrapper for errors that should not retrigger the reconciler.
-type NoReschedule struct{}
-
-func (nr NoReschedule) Error() string {
-	return "no-reschedule"
+type UnReschedulableError struct {
+	Err error
 }
-func (nr NoReschedule) Is(err error) bool {
-	_, ok := err.(*NoReschedule)
+
+func (nr UnReschedulableError) Error() string {
+	return fmt.Sprintf("will not reschedule: %s", nr.Err.Error())
+}
+func (nr UnReschedulableError) Is(err error) bool {
+	_, ok := err.(*UnReschedulableError)
 	return ok
+}
+func DoNotReschedule(err error) UnReschedulableError {
+	return UnReschedulableError{Err: err}
 }
 
 func HandleError(err error) (ctrl.Result, error) {
-	var reschedule Reschedule
-	if errors.As(err, &reschedule) {
-		return ctrl.Result{RequeueAfter: reschedule.RequeueAfter}, nil
+	var rerr ReschedulableError
+	if errors.As(err, &rerr) {
+		return ctrl.Result{RequeueAfter: rerr.RequeueAfter}, nil
 	}
-	if errors.Is(err, &NoReschedule{}) {
+	if errors.Is(err, &UnReschedulableError{}) {
 		return ctrl.Result{}, nil
 	}
 	if apierrors.IsNotFound(err) {

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,16 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHandleErrorReschedule(t *testing.T) {
-	e := Reschedule{RequeueAfter: 1 * time.Minute}
+func TestRescheduleAfter(t *testing.T) {
+	e := RescheduleAfter(1*time.Minute, fmt.Errorf("test"))
 	assert := assert.New(t)
 	res, err := HandleError(e)
 	assert.Equal(1*time.Minute, res.RequeueAfter, "requeue after 1 minute")
 	assert.NoError(err, "no error")
 }
 
-func TestHandleErrorNoReschedule(t *testing.T) {
-	e := NoReschedule{}
+func TestDoNotReschedule(t *testing.T) {
+	e := DoNotReschedule(fmt.Errorf("test"))
 	assert := assert.New(t)
 	res, err := HandleError(e)
 	assert.Equal(ctrl.Result{}, res, "no requeue")

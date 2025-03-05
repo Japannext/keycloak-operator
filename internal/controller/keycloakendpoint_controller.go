@@ -77,18 +77,17 @@ func reconcileEndpoint(r *utils.BaseReconciler, ctx context.Context, i Endpoint)
 
 	info, err := gc.GetServerInfo(ctx, token)
 	if err != nil {
-		msg := fmt.Sprintf("failed to connect to endpoint '%s'", spec.BaseUrl)
-		r.Event(i, "Warning", "Connect", fmt.Sprintf("%s: %s", msg, err))
-		if status.Phase != "Error" || status.Message != msg {
+		err = fmt.Errorf("failed to connect to endpoint '%s': %w", spec.BaseUrl, err)
+		r.Event(i, "Warning", "Connect", err.Error())
+		if status.Phase != "Error" || status.Message != err.Error() {
 			patch := client.MergeFrom(i)
 			status.Phase = "Error"
-			status.Message = msg
+			status.Message = err.Error()
 			if err := r.Patch(ctx, i, patch); err != nil {
 				return fmt.Errorf("failed to patch resource status: %w", err)
 			}
-			return utils.Reschedule{}
 		}
-		return err
+		return utils.Reschedule(err)
 	}
 
 	if status.Phase != "Connected" {

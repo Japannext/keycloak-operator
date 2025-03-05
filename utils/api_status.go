@@ -18,10 +18,11 @@ type ApiHelper struct {
 }
 
 const (
-	createdMsg        = "successfully created resource"
-	updatedMsg        = "successfully updated resource"
-	deletedMsg        = "successfully deleted resource"
-	alreadyDeletedMsg = "resource was already deleted"
+	createdMsg                           = "successfully created resource"
+	updatedMsg                           = "successfully updated resource"
+	deletedMsg                           = "successfully deleted resource"
+	alreadyDeletedMsg                    = "resource was already deleted"
+	keycloakResourceMissingRetryInterval = 1 * time.Minute
 )
 
 func (api *ApiHelper) Created() error {
@@ -72,7 +73,7 @@ func (api *ApiHelper) Waiting(text string) error {
 			return fmt.Errorf("failed to patch resource status (waiting): %w", err)
 		}
 	}
-	return Reschedule{RequeueAfter: 1 * time.Minute}
+	return RescheduleAfter(keycloakResourceMissingRetryInterval, fmt.Errorf(text))
 }
 
 func (api *ApiHelper) Error(action, text string, err error) error {

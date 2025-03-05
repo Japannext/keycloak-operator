@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -12,6 +13,8 @@ import (
 	"github.com/japannext/keycloak-operator/api/v1alpha2"
 	"github.com/japannext/keycloak-operator/gocloak"
 )
+
+const keycloakDownRetryInterval = 1 * time.Minute
 
 // spec, err := ExtractEndpointSpec(ctx, r.Client, i.Spec.Endpoint, ns)
 // IsForbidden(spec.Rules)
@@ -87,19 +90,19 @@ func (r *BaseReconciler) ExtractEndpoint(ctx context.Context, i Object) (*gocloa
 	}
 	if len(spec.Rules) > 0 {
 		if forbidden, ruleName := isForbidden(spec.Rules, i, realm); forbidden {
+			forbiddenError := fmt.Errorf("Rule '%s': namespace '%s' is forbidden to manage '%s' on realm '%s'", ruleName, ns, getKind(i), realm)
 			if MarkedAsDeleted(i) && HasFinalizer(i) {
 				log.Info("Forbidden resource deleted silently")
-				return nil, "", NoReschedule{}
+				return nil, "", DoNotReschedule(forbiddenError)
 			}
-			msg := fmt.Sprintf("Rule '%s': namespace '%s' is forbidden to manage '%s' on realm '%s'", ruleName, ns, getKind(i), realm)
-			r.Event(i, "Warning", "Authz", msg)
+			r.Event(i, "Warning", "Authz", forbiddenError.Error())
 			status := i.ApiStatus()
 			if status.Phase != v1alpha2.FORBIDDEN {
 				if err := r.Status().Patch(ctx, i, makePatch(v1alpha2.FORBIDDEN)); err != nil {
 					return nil, "", fmt.Errorf("failed to patch resource status (forbidden): %w", err)
 				}
 			}
-			return nil, "", fmt.Errorf(msg)
+			return nil, "", DoNotReschedule(forbiddenError)
 		}
 	}
 	if e.Kind == "KeycloakClusterEndpoint" {
@@ -115,7 +118,7 @@ func (r *BaseReconciler) ExtractEndpoint(ctx context.Context, i Object) (*gocloa
 				return nil, "", fmt.Errorf("failed to patch resource status (not-connected): %w", err)
 			}
 		}
-		return nil, "", Reschedule{}
+		return nil, "", RescheduleAfter(keycloakDownRetryInterval, err)
 	}
 
 	return gc, token, nil
