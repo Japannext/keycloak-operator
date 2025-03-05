@@ -1,6 +1,6 @@
 # [MANAGER]: Manager Deployment Configurations
 controllerManager:
-  replicas: 1
+  replicas: 2
   container:
     image:
       repository: ghcr.io/japannext/keycloak-operator
