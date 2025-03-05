@@ -1,33 +1,40 @@
+{{- if .Values.crd.enable }}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
   annotations:
+    {{- if .Values.crd.keep }}
+    "helm.sh/resource-policy": keep
+    {{- end }}
     controller-gen.kubebuilder.io/version: v0.17.2
-  name: keycloakclientscopes.keycloak.japannext.co.jp
+  name: keycloakclientroles.keycloak.japannext.co.jp
 spec:
   group: keycloak.japannext.co.jp
   names:
     categories:
     - keycloak
-    kind: KeycloakClientScope
-    listKind: KeycloakClientScopeList
-    plural: keycloakclientscopes
+    kind: KeycloakClientRole
+    listKind: KeycloakClientRoleList
+    plural: keycloakclientroles
     shortNames:
-    - kcs
-    singular: keycloakclientscope
+    - kcrole
+    singular: keycloakclientrole
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: Realm of the client scope
-      jsonPath: .spec.realm
+    - jsonPath: .spec.realm
       name: REALM
       type: string
-    - description: Authentication protocol used by the client
-      jsonPath: .spec.config.protocol
-      name: PROTOCOL
+    - jsonPath: .spec.client
+      name: CLIENT
       type: string
-    - description: The status of the realm
+    - jsonPath: .spec.config.name
+      name: ROLE
+      type: string
+    - description: The status of the resource
       jsonPath: .status.api.phase
       name: STATUS
       type: string
@@ -36,10 +43,15 @@ spec:
       name: LAST CHANGED
       priority: 1
       type: date
+    - description: The description of the role
+      jsonPath: .spec.config.description
+      name: DESCRIPTION
+      priority: 1
+      type: string
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: KeycloakClientScope is the Schema for the keycloakclientscopes
+        description: KeycloakClientRole is the Schema for the keycloakclientroles
           API
         properties:
           apiVersion:
@@ -48,6 +60,8 @@ spec:
               Servers should convert recognized schemas to the latest internal value, and
               may reject unrecognized values.
               More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          clientName:
             type: string
           kind:
             description: |-
@@ -60,21 +74,44 @@ spec:
           metadata:
             type: object
           spec:
-            description: KeycloakClientScopeSpec defines the desired state of KeycloakClientScope
+            description: KeycloakClientRoleSpec defines the desired state of KeycloakClientRole
             properties:
+              client:
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
               config:
-                description: ClientScope is a ClientScope
+                description: Role is a role
                 properties:
                   attributes:
-                    description: ClientScopeAttributes are attributes of client scopes
-                    properties:
-                      consent.screen.text:
+                    additionalProperties:
+                      items:
                         type: string
-                      display.on.consent.screen:
-                        type: string
-                      include.in.token.scope:
-                        type: string
+                      type: array
                     type: object
+                  clientRole:
+                    type: boolean
+                  composite:
+                    default: false
+                    type: boolean
+                  composites:
+                    description: CompositesRepresentation represents the composite
+                      roles of a role
+                    properties:
+                      client:
+                        additionalProperties:
+                          items:
+                            type: string
+                          type: array
+                        type: object
+                      realm:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  containerId:
+                    type: string
                   description:
                     default: ""
                     type: string
@@ -82,55 +119,8 @@ spec:
                     type: string
                   name:
                     type: string
-                  protocol:
-                    default: openid-connect
-                    enum:
-                    - openid-connect
-                    - saml
-                    type: string
-                  protocolMappers:
-                    items:
-                      description: ProtocolMapper representation
-                      properties:
-                        config:
-                          additionalProperties:
-                            type: string
-                          type: object
-                        consentRequired:
-                          default: false
-                          type: boolean
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        protocol:
-                          type: string
-                        protocolMapper:
-                          enum:
-                          - oidc-acr-mapper
-                          - oidc-address-mapper
-                          - oidc-allowed-origins-mapper
-                          - oidc-audience-mapper
-                          - oidc-audience-resolve-mapper
-                          - oidc-claims-param-token-mapper
-                          - oidc-full-name-mapper
-                          - oidc-group-membership-mapper
-                          - oidc-hardcoded-claim-mapper
-                          - oidc-hardcoded-role-mapper
-                          - oidc-role-name-mapper
-                          - oidc-sha256-pairwise-sub-mapper
-                          - oidc-usermodel-attribute-mapper
-                          - oidc-usermodel-client-role-mapper
-                          - oidc-usermodel-property-mapper
-                          - oidc-usermodel-realm-role-mapper
-                          - oidc-usersessionmodel-note-mapper
-                          type: string
-                      required:
-                      - name
-                      - protocol
-                      - protocolMapper
-                      type: object
-                    type: array
+                  scopeParamRequired:
+                    type: boolean
                 required:
                 - name
                 type: object
@@ -157,11 +147,11 @@ spec:
                 - message: Value is immutable
                   rule: self == oldSelf
             required:
+            - client
             - config
             - realm
             type: object
           status:
-            description: KeycloakClientScopeStatus defines the observed state of KeycloakClientScope
             properties:
               api:
                 description: Base status
@@ -175,8 +165,11 @@ spec:
                       to sync, etc
                     type: string
                 type: object
-              clientScopeID:
-                description: The ID of the client scope deployed
+              clientID:
+                description: The ID of the client the role belongs to
+                type: string
+              roleID:
+                description: The ID of the role managed
                 type: string
             type: object
         type: object
@@ -184,3 +177,4 @@ spec:
     storage: true
     subresources:
       status: {}
+{{- end -}}

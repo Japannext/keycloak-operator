@@ -5,26 +5,19 @@ dotenv: ['.env']
 
 vars:
   name: keycloak-operator
-  chart_version: 1.1.4
-  version: 1.1.4
+  chart_version: 1.1.5
+  version: 1.1.5
 
   oci: ghcr.io/japannext
   helm_oci: ghcr.io/japannext/helm-charts
 
-  controllergen_version: v0.13.0
+  controllergen_version: v0.17.2
   kustomize_version: v3.8.7
   helmify_version: v0.4.13
 
 
 tasks:
   # Build dependencies
-  download:helmify:
-    cmds:
-    - go install github.com/arttor/helmify/cmd/helmify@{{ .helmify_version }}
-    env:
-      GOBIN: "{{ .USER_WORKING_DIR }}/bin"
-    status:
-    - test -x bin/helmify
   download:controllergen:
     cmds:
     - go install sigs.k8s.io/controller-tools/cmd/controller-gen@{{ .controllergen_version }}
@@ -52,6 +45,21 @@ tasks:
     deps: ['download:controllergen']
     cmds:
     - bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+  manifests:
+    deps: ['download:controllergen']
+    cmds:
+    - bin/controller-gen rbac:roleName=manager-role crd webhook paths="./..."
+      output:crd:artifacts:config=config/crd/bases
+    generates:
+    - config/crd/bases/**
+  kustomize:
+    deps: ['download:kustomize', 'manifests']
+    cmds:
+    - bin/kustomize build config/default -o .manifests.yaml
+    sources:
+    - config/**/*.yaml
+    generates:
+    - .manifests.yaml
   # Docker image
   docker:build:
     desc: Verify the docker image builds
@@ -74,36 +82,16 @@ tasks:
     - docker build . -t {{ .oci }}/{{ .name }}:{{ .version }}
     - docker push {{ .oci }}/{{ .name }}:{{ .version }}
   # Kubernetes manifests
-  manifests:
-    deps: ['download:controllergen']
+  chart:build:
+    deps: ['manifests']
     cmds:
-    - bin/controller-gen rbac:roleName=manager-role crd webhook paths="./..."
-      output:crd:artifacts:config=config/crd/bases
-    generates:
-    - config/crd/bases/**
-  kustomize:
-    deps: ['download:kustomize', 'manifests']
-    cmds:
-    - bin/kustomize build config/default -o .manifests.yaml
-    sources:
-    - config/**/*.yaml
-    generates:
-    - .manifests.yaml
-  # Helm chart
-  helmify:
-    deps: ['download:helmify', 'kustomize']
-    cmds:
-    - cat .manifests.yaml | bin/helmify charts/{{ .name }}
-    - "sed -i 's/tag: latest/tag:/' charts/keycloak-operator/values.yaml"
-    sources:
-    - .manifests.yaml
-    generates:
-    - charts/**/*
+    - kubebuilder edit --plugins=helm/v1-alpha
+    - rm -rf .github/
   chart:develop:
     desc: Upload dev helm chart to local repo
-    deps: ['helmify']
+    deps: ['chart:build']
     cmds:
-    - helm package -d .charts/ charts/keycloak-operator --version 0.0.0-dev --app-version={{ .version }}
+    - helm package -d .charts/ dist/chart/ --version 0.0.0-dev --app-version={{ .version }}
     - helm cm-push .charts/keycloak-operator-0.0.0-dev.tgz $LOCAL_HELM_CM
     preconditions:
     - sh: test "$LOCAL_HELM_CM" != ""
@@ -111,5 +99,5 @@ tasks:
   chart:release:
     desc: Release the helm chart to {{ .helm_oci }}
     cmds:
-    - helm package -d .charts/ charts/keycloak-operator --version {{ .chart_version }} --app-version {{ .version }}
+    - helm package -d .charts/ dist/chart/ --version {{ .chart_version }} --app-version {{ .version }}
     - helm push .charts/keycloak-operator-{{ .chart_version }}.tgz oci://{{ .helm_oci }}

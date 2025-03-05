@@ -1,18 +1,28 @@
+{{- if .Values.crd.enable }}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
   annotations:
+    {{- if .Values.crd.keep }}
+    "helm.sh/resource-policy": keep
+    {{- end }}
     controller-gen.kubebuilder.io/version: v0.17.2
-  name: keycloakendpoints.keycloak.japannext.co.jp
+  name: keycloakclusterendpoints.keycloak.japannext.co.jp
 spec:
   group: keycloak.japannext.co.jp
   names:
-    kind: KeycloakEndpoint
-    listKind: KeycloakEndpointList
-    plural: keycloakendpoints
-    singular: keycloakendpoint
-  scope: Namespaced
+    categories:
+    - keycloak
+    kind: KeycloakClusterEndpoint
+    listKind: KeycloakClusterEndpointList
+    plural: keycloakclusterendpoints
+    shortNames:
+    - kce
+    singular: keycloakclusterendpoint
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - description: The version of the endpoint
@@ -36,7 +46,9 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: KeycloakEndpoint is the Schema for the keycloakendpoints API
+        description: |-
+          KeycloakClusterEndpoint represent a Keycloak endpoint.
+          It is similar to KeycloakEndpoint, but not scoped
         properties:
           apiVersion:
             description: |-
@@ -187,3 +199,4 @@ spec:
     storage: true
     subresources:
       status: {}
+{{- end -}}

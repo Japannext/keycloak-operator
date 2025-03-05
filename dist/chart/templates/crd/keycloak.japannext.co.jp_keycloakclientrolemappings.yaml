@@ -1,23 +1,58 @@
+{{- if .Values.crd.enable }}
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
   annotations:
+    {{- if .Values.crd.keep }}
+    "helm.sh/resource-policy": keep
+    {{- end }}
     controller-gen.kubebuilder.io/version: v0.17.2
-  name: keycloakclientprotocolmappers.keycloak.japannext.co.jp
+  name: keycloakclientrolemappings.keycloak.japannext.co.jp
 spec:
   group: keycloak.japannext.co.jp
   names:
-    kind: KeycloakClientProtocolMapper
-    listKind: KeycloakClientProtocolMapperList
-    plural: keycloakclientprotocolmappers
-    singular: keycloakclientprotocolmapper
+    categories:
+    - keycloak
+    kind: KeycloakClientRoleMapping
+    listKind: KeycloakClientRoleMappingList
+    plural: keycloakclientrolemappings
+    shortNames:
+    - kcrolemap
+    singular: keycloakclientrolemapping
   scope: Namespaced
   versions:
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .spec.realm
+      name: REALM
+      type: string
+    - jsonPath: .spec.client
+      name: CLIENT
+      type: string
+    - jsonPath: .spec.role
+      name: ROLE
+      type: string
+    - jsonPath: .spec.subject.kind
+      name: TYPE
+      type: string
+    - jsonPath: .spec.subject.name
+      name: SUBJECT
+      type: string
+    - description: The status of the resource
+      jsonPath: .status.api.phase
+      name: STATUS
+      type: string
+    - description: The last time the resource was changed
+      jsonPath: .status.api.lastTransitionTime
+      name: LAST CHANGED
+      priority: 1
+      type: date
+    name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: KeycloakClientProtocolMapper is the Schema for the keycloakclientprotocolmappers
+        description: KeycloakClientRoleMapping is the Schema for the keycloakclientrolemappings
           API
         properties:
           apiVersion:
@@ -38,55 +73,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: KeycloakClientProtocolMapperSpec defines the desired state
-              of KeycloakClientProtocolMapper
             properties:
               client:
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable
                   rule: self == oldSelf
-              config:
-                description: ProtocolMapper representation
-                properties:
-                  config:
-                    additionalProperties:
-                      type: string
-                    type: object
-                  consentRequired:
-                    default: false
-                    type: boolean
-                  id:
-                    type: string
-                  name:
-                    type: string
-                  protocol:
-                    type: string
-                  protocolMapper:
-                    enum:
-                    - oidc-acr-mapper
-                    - oidc-address-mapper
-                    - oidc-allowed-origins-mapper
-                    - oidc-audience-mapper
-                    - oidc-audience-resolve-mapper
-                    - oidc-claims-param-token-mapper
-                    - oidc-full-name-mapper
-                    - oidc-group-membership-mapper
-                    - oidc-hardcoded-claim-mapper
-                    - oidc-hardcoded-role-mapper
-                    - oidc-role-name-mapper
-                    - oidc-sha256-pairwise-sub-mapper
-                    - oidc-usermodel-attribute-mapper
-                    - oidc-usermodel-client-role-mapper
-                    - oidc-usermodel-property-mapper
-                    - oidc-usermodel-realm-role-mapper
-                    - oidc-usersessionmodel-note-mapper
-                    type: string
-                required:
-                - name
-                - protocol
-                - protocolMapper
-                type: object
               endpoint:
                 description: Select a KeycloakEndpoint
                 properties:
@@ -109,13 +101,37 @@ spec:
                 x-kubernetes-validations:
                 - message: Value is immutable
                   rule: self == oldSelf
+              role:
+                type: string
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
+              subject:
+                description: Represent a user or group in keycloak
+                properties:
+                  kind:
+                    description: The type of the subject. Either `user` or `group`.
+                    enum:
+                    - user
+                    - group
+                    type: string
+                  name:
+                    description: The name of the user or group
+                    type: string
+                required:
+                - kind
+                - name
+                type: object
+                x-kubernetes-validations:
+                - message: Value is immutable
+                  rule: self == oldSelf
             required:
             - client
             - realm
+            - role
+            - subject
             type: object
           status:
-            description: KeycloakClientProtocolMapperStatus defines the observed state
-              of KeycloakClientProtocolMapper
             properties:
               api:
                 description: Base status
@@ -130,10 +146,14 @@ spec:
                     type: string
                 type: object
               clientID:
-                description: The ID of the client
+                description: The ID of the client owning the role concerned by the
+                  mapping
                 type: string
-              protocolMapperID:
-                description: The ID of the protocol mapper managed
+              roleID:
+                description: The ID of the client role concerned by the mapping
+                type: string
+              subjectID:
+                description: The ID of the Subject concerned by the mapping
                 type: string
             type: object
         type: object
@@ -141,3 +161,4 @@ spec:
     storage: true
     subresources:
       status: {}
+{{- end -}}

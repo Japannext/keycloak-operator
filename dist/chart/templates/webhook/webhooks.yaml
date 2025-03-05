@@ -1,0 +1,94 @@
+{{- if .Values.webhook.enable }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: keycloak-operator-mutating-webhook-configuration
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.certmanager.enable }}
+    cert-manager.io/inject-ca-from: "{{ $.Release.Namespace }}/serving-cert"
+    {{- end }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+webhooks:
+  - name: mkeycloakclient.kb.io
+    clientConfig:
+      service:
+        name: keycloak-operator-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakclient
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - keycloak.japannext.co.jp
+        apiVersions:
+          - v1alpha2
+        resources:
+          - keycloakclients
+  - name: mkeycloakclientrole.kb.io
+    clientConfig:
+      service:
+        name: keycloak-operator-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakclientrole
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - keycloak.japannext.co.jp
+        apiVersions:
+          - v1alpha2
+        resources:
+          - keycloakclientroles
+  - name: mkeycloakldapfederation.kb.io
+    clientConfig:
+      service:
+        name: keycloak-operator-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakldapfederation
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - keycloak.japannext.co.jp
+        apiVersions:
+          - v1alpha2
+        resources:
+          - keycloakldapfederations
+  - name: mkeycloakrealm.kb.io
+    clientConfig:
+      service:
+        name: keycloak-operator-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-keycloak-japannext-co-jp-v1alpha2-keycloakrealm
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - keycloak.japannext.co.jp
+        apiVersions:
+          - v1alpha2
+        resources:
+          - keycloakrealms
+{{- end }}
