@@ -684,11 +684,6 @@ func (in *RealmRepresentation) DeepCopyInto(out *RealmRepresentation) {
 		*out = new(int)
 		**out = **in
 	}
-	if in.AccountTheme != nil {
-		in, out := &in.AccountTheme, &out.AccountTheme
-		*out = new(string)
-		**out = **in
-	}
 	if in.ActionTokenGeneratedByAdminLifespan != nil {
 		in, out := &in.ActionTokenGeneratedByAdminLifespan, &out.ActionTokenGeneratedByAdminLifespan
 		*out = new(int)
@@ -707,11 +702,6 @@ func (in *RealmRepresentation) DeepCopyInto(out *RealmRepresentation) {
 	if in.AdminEventsEnabled != nil {
 		in, out := &in.AdminEventsEnabled, &out.AdminEventsEnabled
 		*out = new(bool)
-		**out = **in
-	}
-	if in.AdminTheme != nil {
-		in, out := &in.AdminTheme, &out.AdminTheme
-		*out = new(string)
 		**out = **in
 	}
 	if in.Attributes != nil {
@@ -830,11 +820,6 @@ func (in *RealmRepresentation) DeepCopyInto(out *RealmRepresentation) {
 	if in.EditUsernameAllowed != nil {
 		in, out := &in.EditUsernameAllowed, &out.EditUsernameAllowed
 		*out = new(bool)
-		**out = **in
-	}
-	if in.EmailTheme != nil {
-		in, out := &in.EmailTheme, &out.EmailTheme
-		*out = new(string)
 		**out = **in
 	}
 	if in.Enabled != nil {

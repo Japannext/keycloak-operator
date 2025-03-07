@@ -786,7 +786,7 @@ type RealmRepresentation struct {
 	// +kubebuilder:default=900
 	AccessTokenLifespanForImplicitFlow *int `json:"accessTokenLifespanForImplicitFlow,omitempty" diff:"accessTokenLifespanForImplicitFlow"`
 	// +optional
-	AccountTheme *string `json:"accountTheme,omitempty" diff:"accountTheme"`
+	AccountTheme string `json:"accountTheme" diff:"accountTheme"`
 	// +kubebuilder:default=43200
 	ActionTokenGeneratedByAdminLifespan *int `json:"actionTokenGeneratedByAdminLifespan,omitempty" diff:"actionTokenGeneratedByAdminLifespan"`
 	// +kubebuilder:default=300
@@ -796,7 +796,7 @@ type RealmRepresentation struct {
 	// +kubebuilder:default=false
 	AdminEventsEnabled *bool `json:"adminEventsEnabled,omitempty" diff:"adminEventsEnabled"`
 	// +optional
-	AdminTheme *string `json:"adminTheme,omitempty" diff:"adminTheme"`
+	AdminTheme string `json:"adminTheme" diff:"adminTheme"`
 	// +kubebuilder:default={}
 	Attributes *map[string]string `json:"attributes,omitempty" diff:"-"`
 	// +kubebuilder:default="browser"
@@ -834,7 +834,7 @@ type RealmRepresentation struct {
 	// +kubebuilder:default=false
 	EditUsernameAllowed *bool `json:"editUsernameAllowed,omitempty" diff:"editUsernameAllowed"`
 	// +optional
-	EmailTheme *string `json:"emailTheme,omitempty" diff:"emailTheme"`
+	EmailTheme string `json:"emailTheme" diff:"emailTheme"`
 	// +kubebuilder:default=true
 	Enabled *bool `json:"enabled,omitempty" diff:"enabled"`
 	// +kubebuilder:default={}
