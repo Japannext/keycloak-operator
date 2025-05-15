@@ -450,7 +450,7 @@ type ProtocolMapper struct {
 	Name *string `json:"name,omitempty" diff:"name"`
 	// +required
 	Protocol *string `json:"protocol,omitempty" diff:"protocol"`
-	// +kubebuilder:validation:Enum=oidc-acr-mapper;oidc-address-mapper;oidc-allowed-origins-mapper;oidc-audience-mapper;oidc-audience-resolve-mapper;oidc-claims-param-token-mapper;oidc-full-name-mapper;oidc-group-membership-mapper;oidc-hardcoded-claim-mapper;oidc-hardcoded-role-mapper;oidc-role-name-mapper;oidc-sha256-pairwise-sub-mapper;oidc-usermodel-attribute-mapper;oidc-usermodel-client-role-mapper;oidc-usermodel-property-mapper;oidc-usermodel-realm-role-mapper;oidc-usersessionmodel-note-mapper
+	// +kubebuilder:validation:Enum=oidc-acr-mapper;oidc-address-mapper;oidc-allowed-origins-mapper;oidc-amr-mapper;oidc-audience-mapper;oidc-audience-resolve-mapper;oidc-claims-param-token-mapper;oidc-full-name-mapper;oidc-group-membership-mapper;oidc-hardcoded-claim-mapper;oidc-hardcoded-role-mapper;oidc-nonce-backwards-compatible-mapper;oidc-role-name-mapper;sha256;oidc-script-based-protocol-mapper;oidc-session-state-mapper;oidc-sub-mapper;oidc-usermodel-attribute-mapper;oidc-usermodel-client-role-mapper;oidc-usermodel-property-mapper;oidc-usermodel-realm-role-mapper;oidc-usersessionmodel-note-mapper
 	// +required
 	ProtocolMapper *string `json:"protocolMapper,omitempty" diff:"protocolMapper"`
 	// +kubebuilder:default=false
