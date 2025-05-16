@@ -110,6 +110,7 @@ spec:
                           - oidc-acr-mapper
                           - oidc-address-mapper
                           - oidc-allowed-origins-mapper
+                          - oidc-amr-mapper
                           - oidc-audience-mapper
                           - oidc-audience-resolve-mapper
                           - oidc-claims-param-token-mapper
@@ -117,8 +118,12 @@ spec:
                           - oidc-group-membership-mapper
                           - oidc-hardcoded-claim-mapper
                           - oidc-hardcoded-role-mapper
+                          - oidc-nonce-backwards-compatible-mapper
                           - oidc-role-name-mapper
-                          - oidc-sha256-pairwise-sub-mapper
+                          - sha256
+                          - oidc-script-based-protocol-mapper
+                          - oidc-session-state-mapper
+                          - oidc-sub-mapper
                           - oidc-usermodel-attribute-mapper
                           - oidc-usermodel-client-role-mapper
                           - oidc-usermodel-property-mapper

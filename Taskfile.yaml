@@ -5,8 +5,8 @@ dotenv: ['.env']
 
 vars:
   name: keycloak-operator
-  chart_version: 1.1.5
-  version: 1.1.5
+  chart_version: 1.1.6
+  version: 1.1.6
 
   oci: ghcr.io/japannext
   helm_oci: ghcr.io/japannext/helm-charts
